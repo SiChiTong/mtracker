@@ -9,7 +9,10 @@
   type sensors_msgs/Joy being published under topic /joy
   in order to work. It translates the joystick values
   into the proper control signals, which are further
-  published under topic /controls.
+  published under topic /controls. It works in an
+  asynchronous manner, meaning that the control signals
+  are published only after the new joystick signals
+  arrive.
 
   Mateusz Przybyla
   Chair of Control and Systems Engineering
@@ -20,13 +23,12 @@
 
 void shutdown(int sig)
 {
-  ROS_INFO("MTracker joystick controller shutdown");
-
+  ROS_INFO("MTracker manual controller shutdown");
   ros::shutdown();
 }
 
 
-class MtJoy {
+class ManualController {
 public:
   ros::Publisher  ctrl_pub;
   ros::Subscriber joy_sub;
@@ -35,6 +37,7 @@ public:
   {
     geometry_msgs::Twist controls;
 
+    // TODO: Think about making the gains somehow changeable
     controls.linear.x  = 0.5 * joy_msg->axes[1];
     controls.angular.z = 1.0 * joy_msg->axes[0];
 
@@ -45,15 +48,15 @@ public:
 
 int main(int argc, char **argv)
 {
-  MtJoy m;
+  ManualController mc;
 
-  ros::init(argc, argv, "mtracker_joy");
+  ros::init(argc, argv, "manual_controller");
   ros::NodeHandle n;
 
-  ROS_INFO("MTracker joystick controller start");
+  ROS_INFO("MTracker manual controller start");
 
-  m.ctrl_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
-  m.joy_sub = n.subscribe("/joy", 10, &MtJoy::joyCallback, &m);
+  mc.ctrl_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
+  mc.joy_sub = n.subscribe("/joy", 10, &ManualController::joyCallback, &mc);
 
   signal(SIGINT, shutdown);
 

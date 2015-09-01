@@ -3,6 +3,17 @@
 #include "geometry_msgs/Twist.h"
 #include "tf/transform_broadcaster.h"
 
+/***
+  This node simulates the behavior of a real MTracker
+  robot. It receives the /controls signals and publish
+  the virtual odometry information as /pose and /velocity.
+
+  Mateusz Przybyla
+  Chair of Control and Systems Engineering
+  Faculty of Computing
+  Poznan University of Technology
+***/
+
 
 class Simulator
 {

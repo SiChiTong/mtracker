@@ -36,18 +36,25 @@ add_dependencies(mtracker mtracker_generate_messages_cpp)
 target_link_libraries(mtracker ${catkin_LIBRARIES})
 
 # An application of manual joystick controller
-add_executable(mtracker_joy
-  src/mtracker_joy.cpp
+add_executable(manual_controller
+  src/manual_controller.cpp
 )
-add_dependencies(mtracker_joy mtracker_generate_messages_cpp)
-target_link_libraries(mtracker_joy ${catkin_LIBRARIES})
+add_dependencies(manual_controller mtracker_generate_messages_cpp)
+target_link_libraries(manual_controller ${catkin_LIBRARIES})
 
 # An application of automatic controller
-add_executable(controller
-  src/controller.cpp
+add_executable(automatic_controller
+  src/automatic_controller.cpp
 )
-add_dependencies(controller mtracker_generate_messages_cpp)
-target_link_libraries(controller ${catkin_LIBRARIES})
+add_dependencies(automatic_controller mtracker_generate_messages_cpp)
+target_link_libraries(automatic_controller ${catkin_LIBRARIES})
+
+# The reference trajectory generator for the automatic_controller
+add_executable(reference_generator
+  src/reference_generator.cpp
+)
+add_dependencies(reference_generator mtracker_generate_messages_cpp)
+target_link_libraries(reference_generator ${catkin_LIBRARIES})
 
 # A simulator of MTracker
 add_executable(simulator
