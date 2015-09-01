@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/Twist.h"
-#include <signal.h>
 
 /***
   This node provides the user with a manual controller
@@ -21,15 +20,13 @@
 ***/
 
 
-void shutdown(int sig)
-{
-  ROS_INFO("MTracker manual controller shutdown");
-  ros::shutdown();
-}
-
-
 class ManualController {
 public:
+  ManualController() : k_v(0.5f), k_w(1.0f) {}
+
+  float k_v;  // Linear velocity gain
+  float k_w;  // Angular velocity gain
+
   ros::Publisher  ctrl_pub;
   ros::Subscriber joy_sub;
 
@@ -37,9 +34,8 @@ public:
   {
     geometry_msgs::Twist controls;
 
-    // TODO: Think about making the gains somehow changeable
-    controls.linear.x  = 0.5 * joy_msg->axes[1];
-    controls.angular.z = 1.0 * joy_msg->axes[0];
+    controls.linear.x  = k_v * joy_msg->axes[1];
+    controls.angular.z = k_w * joy_msg->axes[0];
 
     ctrl_pub.publish(controls);
   }
@@ -53,12 +49,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "manual_controller");
   ros::NodeHandle n;
 
-  ROS_INFO("MTracker manual controller start");
-
   mc.ctrl_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
   mc.joy_sub = n.subscribe("/joy", 10, &ManualController::joyCallback, &mc);
 
-  signal(SIGINT, shutdown);
+  ROS_INFO("MTracker manual controller start");
 
   ros::spin();
 

@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
-#include <signal.h>
 
 /***
   This node provides the user with an automatic controller
@@ -21,13 +20,6 @@
   Faculty of Computing
   Poznan University of Technology
 ***/
-
-
-void shutdown(int sig)
-{
-  ROS_INFO("MTracker automatic controller shutdown");
-  ros::shutdown();
-}
 
 
 class AutomaticController {
@@ -79,6 +71,11 @@ public:
     controls.linear.x = 1.0;
     controls.angular.z = 0.0;
   }
+
+  void publishControls()
+  {
+    ctrl_pub.publish(controls);
+  }
 };
 
 
@@ -95,19 +92,16 @@ int main(int argc, char **argv)
   ac.ref_pos_sub = n.subscribe("/reference_pose", 10, &AutomaticController::refPoseCallback, &ac);
   ac.ref_vel_sub = n.subscribe("/reference_velocity", 10, &AutomaticController::refVelocityCallback, &ac);
 
+  ROS_INFO("MTracker automatic controller start");
 
-  ROS_INFO("MTracker Controller");
-
-  signal(SIGINT, shutdown);
-
-  ros::Rate rate(100.0);	// Hz
+  ros::Rate rate(100.0);
 
   while (ros::ok())
   {
     ros::spinOnce();
 
     ac.computeControls();
-    ac.ctrl_pub.publish(ac.controls);
+    ac.publishControls();
 
     rate.sleep();
   }

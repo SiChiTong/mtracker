@@ -45,13 +45,13 @@ int main(int argc, char **argv)
 
   ros::ServiceServer trig_srv = n.advertiseService("/trigger_motors", &Robot::triggerCallback, robot);
 
-  ROS_INFO("MTracker start");
-
   robot->com->openPort();
   robot->com->stopWheels();
   robot->com->setOdometry(0.0f, 0.0f, 0.0f);
 
   signal(SIGINT, shutdown);
+
+  ROS_INFO("MTracker start");
 
   ros::Rate rate(100.0);
 
