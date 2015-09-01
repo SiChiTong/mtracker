@@ -25,6 +25,7 @@ include_directories(
   include/mtracker
 )
 
+# The bridge between high level and low level controllers
 add_executable(mtracker 
   src/mtracker.cpp  src/rs232.c
   include/mtracker/Robot.hpp
@@ -34,18 +35,21 @@ add_executable(mtracker
 add_dependencies(mtracker mtracker_generate_messages_cpp)
 target_link_libraries(mtracker ${catkin_LIBRARIES})
 
+# An application of manual joystick controller
 add_executable(mtracker_joy
   src/mtracker_joy.cpp
 )
 add_dependencies(mtracker_joy mtracker_generate_messages_cpp)
 target_link_libraries(mtracker_joy ${catkin_LIBRARIES})
 
+# An application of automatic controller
 add_executable(controller
   src/controller.cpp
 )
 add_dependencies(controller mtracker_generate_messages_cpp)
 target_link_libraries(controller ${catkin_LIBRARIES})
 
+# A simulator of MTracker
 add_executable(simulator
   src/simulator.cpp
 )

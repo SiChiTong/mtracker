@@ -1,6 +1,31 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
+#include <signal.h>
+
+/***
+  This node provides the user with an automatic controller
+  for semi-autonomous motion of MTracker. It requires the
+  position of the robot as a geometry_msgs/Pose2D message
+  being published under topic /pos. It also needs the
+  reference trajectory published as a geometry_msgs/Pose2D
+  message under topic /reference. As a result it publishes
+  control signals under topic /controls.
+
+  Mateusz Przybyla
+  Chair of Control and Systems Engineering
+  Faculty of Computing
+  Poznan University of Technology
+***/
+
+
+void shutdown(int sig)
+{
+  ROS_INFO("MTracker automatic controller shutdown");
+
+  ros::shutdown();
+}
+
 
 class Controller {
 public:
@@ -40,6 +65,8 @@ int main(int argc, char **argv)
   c.pos_sub = n.subscribe("/pos", 10, &Controller::posCallback, &c);
 
   ROS_INFO("MTracker Controller");
+
+  signal(SIGINT, shutdown);
 
   ros::Rate rate(100.0);
 
