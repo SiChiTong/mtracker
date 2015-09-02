@@ -22,53 +22,79 @@
 class ReferenceGenerator
 {
 public:
-  ReferenceGenerator() : x_r(0.0f), y_r(0.0f), theta_r(0.0f), v_r(0.0f), w_r(0.0f), t(0.0f) {}
-
-  float x_r, y_r, theta_r;
-  float v_r, w_r;
-  float t;
-
-  geometry_msgs::Pose2D reference_pose;
-  geometry_msgs::Twist  reference_velocity;
-
   ros::Publisher ref_pos_pub;
   ros::Publisher ref_vel_pub;
 
-  void calculateRefPose()
+  geometry_msgs::Pose2D ref_pose;
+  geometry_msgs::Twist  ref_velocity;
+
+  void calculateRefPose(float t)
   {
-    float omega = 1.0;
-    x_r = 1.0 * cos(omega * t);
-    y_r = 1.0 * sin(omega * t);
-    theta_r = omega * t;
+    static float omega = 0.3f;
+    static float R = 0.7f;
+
+    ref_pose.x = R * cos(omega * t);
+    ref_pose.y = R * sin(omega * t);
+    ref_pose.theta = omega * t;
   }
 
-  void calculateRefVelocity()
+  void calculateRefVelocity(float t)
   {
-    float omega = 1.0f;
-    v_r = 1.0 * omega;
-    w_r = omega;
+    static float omega = 0.3f;
+    static float R = 0.7f;
+
+    ref_velocity.linear.x  = R * omega;
+    ref_velocity.angular.z = omega;
   }
 
   void publishRefPose()
   {
-    reference_pose.x = x_r;
-    reference_pose.y = y_r;
-    reference_pose.theta = theta_r;
+    static tf::TransformBroadcaster pose_bc;
+    static tf::Transform pose_tf;
 
-    ref_pos_pub.publish(reference_pose);
+    pose_tf.setOrigin(tf::Vector3(ref_pose.x, ref_pose.y, 0.0));
+    pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, ref_pose.theta));
+    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/reference"));
+
+    ref_pos_pub.publish(ref_pose);
   }
 
   void publishRefVelocity()
   {
-    
+    ref_vel_pub.publish(ref_velocity);
   }
 };
 
+
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "reference_generator");
+  ReferenceGenerator r;
 
-  ROS_INFO("MTracker reference generator");
+  ros::init(argc, argv, "reference_generator");
+  ros::NodeHandle n;
+
+  r.ref_pos_pub = n.advertise<geometry_msgs::Pose2D>("/reference_pose", 10);
+  r.ref_vel_pub = n.advertise<geometry_msgs::Twist>("/reference_velocity", 10);
+
+  ROS_INFO("MTracker reference generator start");
+
+  ros::Rate rate(100.0);
+  ros::Time tic = ros::Time::now();
+
+  while (ros::ok())
+  {
+    ros::spinOnce();
+
+    ros::Time toc = ros::Time::now();
+    float t = (toc - tic).toSec();
+
+    r.calculateRefPose(t);
+    r.publishRefPose();
+    r.calculateRefVelocity(t);
+    r.publishRefVelocity();
+
+    rate.sleep();
+  }
 
   return 0;
 }

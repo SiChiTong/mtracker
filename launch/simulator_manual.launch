@@ -1,0 +1,11 @@
+<!-- MTracker simulator launch file. -->
+<launch>
+  <node pkg="mtracker" type="simulator" name="simulator"/>
+  
+  <node pkg="mtracker" type="manual_controller" name="manual_controller"/>
+  
+  <node pkg="joy" type="joy_node" name="joy">
+    <param name="dev" type="string" value="/dev/input/js0"/>
+    <param name="deadzone" value="0.0"/>
+  </node>
+</launch>

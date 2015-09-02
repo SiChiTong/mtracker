@@ -1,0 +1,9 @@
+<!-- MTracker simulator launch file. -->
+<launch>
+  <node pkg="mtracker" type="simulator" name="simulator"/>
+  
+  <node pkg="mtracker" type="reference_generator" name="reference_generator"/>
+  
+  <node pkg="mtracker" type="automatic_controller" name="automatic_controller"/>
+  
+</launch>

@@ -21,54 +21,44 @@
   Poznan University of Technology
 ***/
 
-
 class AutomaticController {
 public:
-  float x, y, theta;        // Actual pose
-  float v, w;               // Actual velocity
-  float x_r, y_r, theta_r;  // Reference pose
-  float v_r, w_r;           // Reference velocity  
-  float t;                  // Time
-
-  geometry_msgs::Twist controls;
-
   ros::Publisher  ctrl_pub;
   ros::Subscriber pos_sub;
   ros::Subscriber vel_sub;
   ros::Subscriber ref_pos_sub;
   ros::Subscriber ref_vel_sub;
 
+  geometry_msgs::Pose2D pose, ref_pose;
+  geometry_msgs::Twist  velocity, ref_velocity;
+  geometry_msgs::Twist  controls;
+
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos_msg)
   {
-    this->x = pos_msg->x;
-    this->y = pos_msg->y;
-    this->theta = pos_msg->theta;
+    pose = *pos_msg;
+    pose.theta = atan2(sin(pose.theta), cos(pose.theta));
   }
 
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& vel_msg)
   {
-    this->v = vel_msg->linear.x;
-    this->w = vel_msg->angular.z;
+    velocity = *vel_msg;
   }
 
   void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pos_msg)
   {
-    this->x_r = ref_pos_msg->x;
-    this->y_r = ref_pos_msg->y;
-    this->theta_r = ref_pos_msg->theta;
+    ref_pose = *ref_pos_msg;
   }
 
   void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_vel_msg)
   {
-    this->v_r = ref_vel_msg->linear.x;
-    this->w_r = ref_vel_msg->angular.z;
+    ref_velocity = *ref_vel_msg;
   }
 
   void computeControls()
   { 
     // HERE PUT THE CODE
-  
-    controls.linear.x = 1.0;
+
+    controls.linear.x = 0.0;
     controls.angular.z = 0.0;
   }
 

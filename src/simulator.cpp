@@ -36,8 +36,7 @@ public:
 
   void ctrlCallback(const geometry_msgs::Twist::ConstPtr& controls_msg)
   {
-    controls.linear.x  = controls_msg->linear.x;
-    controls.angular.z = controls_msg->angular.z;
+    controls = *controls_msg;
   }
 
   void computeVelocity()
@@ -55,17 +54,13 @@ public:
 
   void publishPose()
   {
-    tf::TransformBroadcaster pose_bc;
-    geometry_msgs::TransformStamped pose_tf;
+    static tf::TransformBroadcaster pose_bc;
+    static tf::Transform pose_tf;
 
-    pose_tf.header.stamp = ros::Time::now();
-    pose_tf.header.frame_id = "/virtual_base";
-    pose_tf.transform.translation.x = pose.x;
-    pose_tf.transform.translation.y = pose.y;
-    pose_tf.transform.translation.z = 0.0;
-    pose_tf.transform.rotation = tf::createQuaternionMsgFromYaw(pose.theta);
+    pose_tf.setOrigin(tf::Vector3(pose.x, pose.y, 0.0));
+    pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose.theta));
+    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/virtual_base"));
 
-    pose_bc.sendTransform(pose_tf);
     pose_pub.publish(pose);
   }
 
@@ -80,7 +75,7 @@ int main(int argc, char **argv)
 {
   Simulator s;
 
-  ros::init(argc, argv, "mtracker_simulator");	//, ros::init_options::NoSigintHandler
+  ros::init(argc, argv, "mtracker_simulator");
   ros::NodeHandle n;
 
   s.pose_pub = n.advertise<geometry_msgs::Pose2D>("/virtual_pose", 10);
