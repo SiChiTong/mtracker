@@ -6,4 +6,5 @@
   
   <node pkg="mtracker" type="automatic_controller" name="automatic_controller"/>
   
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find mtracker)/resources/mtracker.rviz"/>
 </launch>

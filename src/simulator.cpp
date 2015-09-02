@@ -21,7 +21,7 @@
 class Simulator
 {
 public:
-  Simulator() : dt(0.01f), Tf(0.02f) {}
+  Simulator() : dt(0.01f), Tf(0.1f) {}
 
   float dt;  // Sampling time
   float Tf;  // Filtering time constant
@@ -59,7 +59,7 @@ public:
 
     pose_tf.setOrigin(tf::Vector3(pose.x, pose.y, 0.0));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose.theta));
-    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/virtual_base"));
+    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/virtual_robot"));
 
     pose_pub.publish(pose);
   }

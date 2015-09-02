@@ -54,13 +54,16 @@ private:
   Frame rx_frame, tx_frame;
 
 public:
-  void openPort()
+  bool openPort()
   {
     if (RS232_OpenComport(port_num, 921600, "8N1") != 0 && port_num <= 21)
     {
       this->port_num++;
       this->openPort();
     }
+    else return true;
+
+    return false;
   }
 
   void closePort()

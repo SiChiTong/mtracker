@@ -34,17 +34,13 @@ public:
 
   void publishPose(ros::Publisher pub)
   {
-    tf::TransformBroadcaster pos_broadcast;
-    geometry_msgs::TransformStamped pos_tf;
+    static tf::TransformBroadcaster pose_bc;
+    static tf::Transform pose_tf;
 
-    pos_tf.header.stamp = ros::Time::now();
-    pos_tf.header.frame_id = "/base";
-    pos_tf.transform.translation.x = pos_odom.x;
-    pos_tf.transform.translation.y = pos_odom.y;
-    pos_tf.transform.translation.z = 0.0;
-    pos_tf.transform.rotation = tf::createQuaternionMsgFromYaw(pos_odom.theta);
+    pose_tf.setOrigin(tf::Vector3(pos_odom.x, pos_odom.y, 0.0));
+    pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pos_odom.theta));
+    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/robot"));
 
-    pos_broadcast.sendTransform(pos_tf);
     pub.publish(pos_odom);
   }
 

@@ -22,7 +22,7 @@
 
 class ManualController {
 public:
-  ManualController() : k_v(0.5f), k_w(1.0f) {}
+  ManualController() : k_v(0.01f), k_w(0.1f) {}
 
   float k_v;  // Linear velocity gain
   float k_w;  // Angular velocity gain

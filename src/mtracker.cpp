@@ -45,7 +45,12 @@ int main(int argc, char **argv)
 
   ros::ServiceServer trig_srv = n.advertiseService("/trigger_motors", &Robot::triggerCallback, robot);
 
-  robot->com->openPort();
+  if (!robot->com->openPort())
+  {
+    ROS_INFO("Could not open COM port.");
+    ros::shutdown();
+  }
+
   robot->com->stopWheels();
   robot->com->setOdometry(0.0f, 0.0f, 0.0f);
 
