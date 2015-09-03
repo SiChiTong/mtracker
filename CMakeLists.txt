@@ -62,3 +62,11 @@ add_executable(simulator
 )
 add_dependencies(simulator mtracker_generate_messages_cpp)
 target_link_libraries(simulator ${catkin_LIBRARIES})
+
+# A Trajectory recorder
+#add_executable(trajectory_recorder
+#  src/trajectory_recorder.cpp
+#)
+#add_dependencies(trajectory_recorder mtracker_generate_messages_cpp)
+#target_link_libraries(trajectory_recorder ${catkin_LIBRARIES})
+

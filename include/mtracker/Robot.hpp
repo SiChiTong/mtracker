@@ -4,7 +4,6 @@
 /* !ALL UNITS ARE IN SI! */
 
 #include "ros/ros.h"
-#include "tf/transform_broadcaster.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
 #include "mtracker/Trigger.h"
@@ -19,45 +18,85 @@ class Robot
 public:
   std::unique_ptr<Serial> com;
 
-  geometry_msgs::Pose2D pos_odom;
-  geometry_msgs::Twist  vel_odom;
+  geometry_msgs::Pose2D pose;
+  geometry_msgs::Twist  velocity;
 
-  float w_l, w_r;
-  bool motors_on;
-
-  Robot() : w_l(0.0f), w_r(0.0f), motors_on(false)
+  Robot()
   {
     std::unique_ptr<Serial> c(new Serial);
     com = std::move(c);
   }
-  ~Robot() {}
 
-  void publishPose(ros::Publisher pub)
+  ~Robot()
   {
-    static tf::TransformBroadcaster pose_bc;
-    static tf::Transform pose_tf;
-
-    pose_tf.setOrigin(tf::Vector3(pos_odom.x, pos_odom.y, 0.0));
-    pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pos_odom.theta));
-    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/robot"));
-
-    pub.publish(pos_odom);
+    setWheelsVelocities(0.0f, 0.0f);
+    switchMotors(false);
   }
 
-  void publishVelocity(ros::Publisher pub)
+  void switchMotors(bool motors_on)
   {
-    pub.publish(vel_odom);
+    if (motors_on)
+      com->prepareFrame(MODE_MOTORS_ON, CMD_SET_WHEELS_AND_ODOM);
+    else
+      com->prepareFrame(MODE_MOTORS_OFF, CMD_SET_WHEELS_AND_ODOM);
+
+    com->writeFrame();
+  }
+
+  void setWheelsVelocities(float w_l, float w_r)
+  {
+    com->tx_frame.w_l =  (int16_t) (w_l * 2048.0f);
+    com->tx_frame.w_r = -(int16_t) (w_r * 2048.0f);
+
+    com->prepareFrame(MODE_MOTORS_ON, CMD_SET_WHEELS_AND_ODOM);
+    com->writeFrame();
+  }
+
+  void setOdometryPose(float x, float y, float theta)
+  {
+    com->tx_frame.x = x;
+    com->tx_frame.y = y;
+    com->tx_frame.theta = theta;
+
+    com->prepareFrame(MODE_SET_ODOMETRY | MODE_MOTORS_ON, CMD_SET_WHEELS_AND_ODOM);
+    com->writeFrame();
+  }
+
+  geometry_msgs::Pose2D getRobotPose()
+  {
+    geometry_msgs::Pose2D pose;
+
+    pose.x = com->rx_frame.x;
+    pose.y = com->rx_frame.y;
+    pose.theta = com->rx_frame.theta;
+
+    return pose;
+  }
+
+  geometry_msgs::Twist getRobotVelocity()
+  {
+    geometry_msgs::Twist velocity;
+
+    float w_l = com->rx_frame.w_l / 2048.0f;
+    float w_r = com->rx_frame.w_r / 2048.0f;
+
+    velocity.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
+    velocity.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
+
+    return velocity;
   }
 
   void controlsCallback(const geometry_msgs::Twist msg)
   {
-    w_l = (msg.linear.x - ROBOT_BASE * msg.angular.z / 2.0) / WHEEL_RADIUS;
-    w_r = (msg.linear.x + ROBOT_BASE * msg.angular.z / 2.0) / WHEEL_RADIUS;
+    float w_l = (msg.linear.x - ROBOT_BASE * msg.angular.z / 2.0) / WHEEL_RADIUS;
+    float w_r = (msg.linear.x + ROBOT_BASE * msg.angular.z / 2.0) / WHEEL_RADIUS;
+
+    setWheelsVelocities(w_l, w_r);
   }
 
   bool triggerCallback(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res)
   {
-    motors_on = req.motors_on;
+    switchMotors(req.motors_on);
     return true;
   }
 };

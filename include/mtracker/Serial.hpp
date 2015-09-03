@@ -41,19 +41,12 @@ struct Frame {
 
 class Serial {
 public:
-  Serial() : port_num(USB0) {}
-  ~Serial() 
-  {
-    stopWheels();
-    switchOffMotors();
-    closePort();
-  }
-
-private:
   int   port_num;
   Frame rx_frame, tx_frame;
 
-public:
+  Serial() : port_num(USB0) {}
+  ~Serial() {}
+
   bool openPort()
   {
     if (RS232_OpenComport(port_num, 921600, "8N1") != 0 && port_num <= 21)
@@ -110,7 +103,6 @@ public:
     tx_frame.crc = crc1 + crc2 * 256;
    }
 
-
   uint16_t CRC16(const uint8_t *data, int len)
   {
     static const uint16_t crc_table[] = {
@@ -154,60 +146,6 @@ public:
       crc_word = (crc_word << 8) ^ crc_table[(((crc_word >> 8) & 0x00FF) ^ *data++) & 0x00FF];
 
     return crc_word;
-  }
-
-  geometry_msgs::Pose2D getPose()
-  {
-    geometry_msgs::Pose2D pose;
-
-    pose.x = rx_frame.x;
-    pose.y = rx_frame.y;
-    pose.theta = rx_frame.theta;
-
-    return pose;
-  }
-
-  geometry_msgs::Twist getVelocity()
-  {
-    geometry_msgs::Twist vel;
-
-    vel.angular.x = rx_frame.w_l / 2048.0f;
-    vel.angular.y = rx_frame.w_r / 2048.0f;
-
-    return vel;
-  }
-
-  void setOdometry(float x, float y, float theta)
-  {
-    tx_frame.x = x;
-    tx_frame.y = y;
-    tx_frame.theta = theta;
-
-    prepareFrame(MODE_SET_ODOMETRY | MODE_MOTORS_ON, CMD_SET_WHEELS_AND_ODOM);
-    writeFrame();
-  }
-
-  void setVelocity(float w_l, float w_r)
-  {
-    tx_frame.w_l =  (int16_t) (w_l * 2048.0f);
-    tx_frame.w_r = -(int16_t) (w_r * 2048.0f);
-
-    prepareFrame(MODE_MOTORS_ON, CMD_SET_WHEELS_AND_ODOM);
-    writeFrame();
-  }
-
-  void switchOffMotors()
-  {
-    tx_frame.w_l = 0;
-    tx_frame.w_r = 0;
-
-    prepareFrame(MODE_MOTORS_OFF, CMD_SET_WHEELS_AND_ODOM);
-    writeFrame();
-  }
-
-  void stopWheels()
-  {
-    setVelocity(0.0f, 0.0f);
   }
 };
 

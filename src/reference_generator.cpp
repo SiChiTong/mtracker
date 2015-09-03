@@ -19,66 +19,121 @@
 ***/
 
 
-class ReferenceGenerator
+struct ReferenceGenerator
 {
-public:
-  ros::Publisher ref_pos_pub;
-  ros::Publisher ref_vel_pub;
-
   geometry_msgs::Pose2D ref_pose;
   geometry_msgs::Twist  ref_velocity;
 
-  void calculateRefPose(float t)
-  {
-    static float omega = 0.3f;
-    static float R = 0.7f;
+  enum TrajectoryType { POINT, LINEAR, CIRCULAR, POLYNOMIAL } trajectory;
+  double x_o, y_o, theta_o;
+  double v, w;
+  double R;
+  double Tp;
+  bool publish_tf;
 
-    ref_pose.x = R * cos(omega * t);
-    ref_pose.y = R * sin(omega * t);
-    ref_pose.theta = omega * t;
+  void calculateRefPose(double t)
+  {
+    switch (trajectory)
+    {
+    case POINT:
+      ref_pose.x = x_o;
+      ref_pose.y = y_o;
+      ref_pose.theta = theta_o;
+      break;
+    case LINEAR:
+      ref_pose.x = x_o + v * cos(theta_o) * t;
+      ref_pose.y = y_o + v * sin(theta_o) * t;
+      ref_pose.theta = theta_o;
+      break;
+    case CIRCULAR:
+      ref_pose.x = x_o + R * cos(w * t);
+      ref_pose.y = y_o + R * sin(w * t);
+      ref_pose.theta = w * t + M_PI_2;
+      break;
+    }
   }
 
-  void calculateRefVelocity(float t)
+  void calculateRefVelocity(double t)
   {
-    static float omega = 0.3f;
-    static float R = 0.7f;
-
-    ref_velocity.linear.x  = R * omega;
-    ref_velocity.angular.z = omega;
+    switch (trajectory)
+    {
+    case POINT:
+      ref_velocity.linear.x  = 0.0;
+      ref_velocity.linear.y  = 0.0;
+      ref_velocity.angular.z = 0.0;
+      break;
+    case LINEAR:
+      ref_velocity.linear.x  = v * cos(theta_o);
+      ref_velocity.linear.y  = v * sin(theta_o);
+      ref_velocity.angular.z = 0.0;
+      break;
+    case CIRCULAR:
+      ref_velocity.linear.x  = -R * w * sin(w * t);
+      ref_velocity.linear.y  =  R * w * cos(w * t);
+      ref_velocity.angular.z =  w;
+      break;
+    }
   }
 
-  void publishRefPose()
+  void updateParams(const ros::TimerEvent& event)
   {
-    static tf::TransformBroadcaster pose_bc;
-    static tf::Transform pose_tf;
+    // Global params
+    static ros::NodeHandle nh;
 
-    pose_tf.setOrigin(tf::Vector3(ref_pose.x, ref_pose.y, 0.0));
-    pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, ref_pose.theta));
-    pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/reference"));
+    if (!nh.getParam("sampling_time", Tp))
+    {
+      Tp = 0.01;
+      nh.setParam("sampling_time", Tp);
+    }
 
-    ref_pos_pub.publish(ref_pose);
-  }
+    // Local params
+    static ros::NodeHandle nh_priv("~");
 
-  void publishRefVelocity()
-  {
-    ref_vel_pub.publish(ref_velocity);
+    int trajectory_type;
+    if (!nh_priv.getParam("trajectory_type", trajectory_type))
+      trajectory_type == 0;
+
+    if (trajectory_type == 1) trajectory = LINEAR;
+    else if (trajectory_type == 2) trajectory = CIRCULAR;
+    else trajectory = POINT;
+
+    if (!nh_priv.getParam("x_origin", x_o))
+      x_o = 0.0;
+    if (!nh_priv.getParam("y_origin", y_o))
+      y_o = 0.0;
+    if (!nh_priv.getParam("theta_origin", theta_o))
+      theta_o = 0.0;
+    if (!nh_priv.getParam("velocity", v))
+      v = 0.0;
+    if (!nh_priv.getParam("omega", w))
+      w = 0.0;
+    if (!nh_priv.getParam("radius", R))
+      R = 0.0;
+    if (!nh_priv.getParam("publish_tf", publish_tf))
+      publish_tf = true;
   }
 };
 
 
 int main(int argc, char **argv)
 {
-  ReferenceGenerator r;
-
   ros::init(argc, argv, "reference_generator");
   ros::NodeHandle n;
 
-  r.ref_pos_pub = n.advertise<geometry_msgs::Pose2D>("/reference_pose", 10);
-  r.ref_vel_pub = n.advertise<geometry_msgs::Twist>("/reference_velocity", 10);
+  ReferenceGenerator r;
+
+  {
+    ros::TimerEvent e;
+    r.updateParams(e);
+  }
+
+  ros::Publisher ref_pose_pub     = n.advertise<geometry_msgs::Pose2D>("/reference_pose", 10);
+  ros::Publisher ref_velocity_pub = n.advertise<geometry_msgs::Twist>("/reference_velocity", 10);
+  ros::Timer     params_tim       = n.createTimer(ros::Duration(0.25), &ReferenceGenerator::updateParams, &r);
 
   ROS_INFO("MTracker reference generator start");
 
-  ros::Rate rate(100.0);
+  ros::Rate rate(1.0 / r.Tp);
   ros::Time tic = ros::Time::now();
 
   while (ros::ok())
@@ -89,9 +144,20 @@ int main(int argc, char **argv)
     float t = (toc - tic).toSec();
 
     r.calculateRefPose(t);
-    r.publishRefPose();
     r.calculateRefVelocity(t);
-    r.publishRefVelocity();
+
+    if (r.publish_tf)
+    {
+      static tf::TransformBroadcaster ref_pose_bc;
+      static tf::Transform ref_pose_tf;
+
+      ref_pose_tf.setOrigin(tf::Vector3(r.ref_pose.x, r.ref_pose.y, 0.0));
+      ref_pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, r.ref_pose.theta));
+      ref_pose_bc.sendTransform(tf::StampedTransform(ref_pose_tf, ros::Time::now(), "/world", "/reference"));
+    }
+
+    ref_pose_pub.publish(r.ref_pose);
+    ref_velocity_pub.publish(r.ref_velocity);
 
     rate.sleep();
   }

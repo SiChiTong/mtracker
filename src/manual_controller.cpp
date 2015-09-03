@@ -20,37 +20,50 @@
 ***/
 
 
-class ManualController {
-public:
-  ManualController() : k_v(0.01f), k_w(0.1f) {}
+struct ManualController
+{
+  ros::Publisher controls_pub;
+  geometry_msgs::Twist controls;
 
-  float k_v;  // Linear velocity gain
-  float k_w;  // Angular velocity gain
-
-  ros::Publisher  ctrl_pub;
-  ros::Subscriber joy_sub;
+  double k_v;  // Linear velocity gain
+  double k_w;  // Angular velocity gain
 
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg)
   {
-    geometry_msgs::Twist controls;
-
     controls.linear.x  = k_v * joy_msg->axes[1];
     controls.angular.z = k_w * joy_msg->axes[0];
 
-    ctrl_pub.publish(controls);
+    controls_pub.publish(controls);
+  }
+
+  void updateParams(const ros::TimerEvent& e)
+  {
+    static ros::NodeHandle nh_priv("~");
+    if (!nh_priv.getParam("v_gain", k_v))
+      k_v = 0.05;
+
+    if (!nh_priv.getParam("w_gain", k_w))
+      k_w = 0.05;
   }
 };
 
 
 int main(int argc, char **argv)
 {
-  ManualController mc;
-
   ros::init(argc, argv, "manual_controller");
   ros::NodeHandle n;
 
-  mc.ctrl_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
-  mc.joy_sub = n.subscribe("/joy", 10, &ManualController::joyCallback, &mc);
+  ManualController mc;
+
+  {
+    ros::TimerEvent e;
+    mc.updateParams(e);
+  }
+
+  mc.controls_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
+  ros::Subscriber joy_sub  = n.subscribe("/joy", 10, &ManualController::joyCallback, &mc);
+  ros::Timer params_tim = n.createTimer(ros::Duration(0.25), &ManualController::updateParams, &mc);
+
 
   ROS_INFO("MTracker manual controller start");
 

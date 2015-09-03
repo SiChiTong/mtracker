@@ -1,6 +1,7 @@
 ﻿#include "ros/ros.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
+#include "tf/transform_broadcaster.h"
 #include "Robot.hpp"
 #include <signal.h>
 
@@ -30,7 +31,7 @@ Robot* robot = new Robot();
 void shutdown(int sig)
 {
   ROS_INFO("MTracker shutdown");
-  delete robot; // TODO: Make sure that the robot goes to off-state
+  delete robot;
   ros::shutdown();
 }
 
@@ -39,10 +40,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "mtracker");
   ros::NodeHandle n;
 
-  ros::Publisher  pos_pub = n.advertise<geometry_msgs::Pose2D>("/pose", 10);
-  ros::Publisher  vel_pub = n.advertise<geometry_msgs::Twist>("/velocity", 10);
-  ros::Subscriber ctrl_sub = n.subscribe("/controls", 10, &Robot::controlsCallback, robot);
-
+  ros::Publisher  pose_pub = n.advertise<geometry_msgs::Pose2D>("/pose", 10);
+  ros::Publisher  velocity_pub = n.advertise<geometry_msgs::Twist>("/velocity", 10);
+  ros::Subscriber controls_sub = n.subscribe("/controls", 10, &Robot::controlsCallback, robot);
   ros::ServiceServer trig_srv = n.advertiseService("/trigger_motors", &Robot::triggerCallback, robot);
 
   if (!robot->com->openPort())
@@ -51,32 +51,35 @@ int main(int argc, char **argv)
     ros::shutdown();
   }
 
-  robot->com->stopWheels();
-  robot->com->setOdometry(0.0f, 0.0f, 0.0f);
+  robot->switchMotors(true);
+  robot->setWheelsVelocities(0.0f, 0.0f);
+  robot->setOdometryPose(0.0f, 0.0f, 0.0f);
 
   signal(SIGINT, shutdown);
 
   ROS_INFO("MTracker start");
 
   ros::Rate rate(100.0);
-
   while (ros::ok())
   {
     ros::spinOnce();
 
     if (robot->com->readFrame())
     {
-      robot->pos_odom = robot->com->getPose();
-      robot->vel_odom = robot->com->getVelocity();
+      pose_pub.publish(robot->getRobotPose());
+      velocity_pub.publish(robot->getRobotVelocity());
 
-      robot->publishPose(pos_pub);
-      robot->publishVelocity(vel_pub);
+      if (true)
+      {
+        tf::TransformBroadcaster pose_bc;
+        tf::Transform pose_tf;
+        geometry_msgs::Pose2D pose = robot->getRobotPose();
+
+        pose_tf.setOrigin(tf::Vector3(pose.x, pose.y, 0.0));
+        pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose.theta));
+        pose_bc.sendTransform(tf::StampedTransform(pose_tf, ros::Time::now(), "/world", "/robot"));
+      }
     }
-
-    if (robot->motors_on)
-      robot->com->setVelocity(robot->w_l, robot->w_r);
-    else
-      robot->com->switchOffMotors();
 
     rate.sleep();
   }
