@@ -23,7 +23,7 @@
 
 #pragma pack(1) 
 struct Frame {
-  Frame() : header(FRAME_HEADER), num_data_bytes(22), group_number(FRAME_GROUP_NUMBER), robot_number(FRAME_ROBOT_NUMBER) {}
+  Frame() : header(FRAME_HEADER), num_data_bytes(22), group_number(FRAME_GROUP_NUMBER), command(CMD_SET_WHEELS_AND_ODOM), robot_number(FRAME_ROBOT_NUMBER) {}
 
   uint8_t header;
   uint8_t num_data_bytes;
@@ -40,11 +40,14 @@ struct Frame {
 };
 
 class Serial {
-public:
+private:
   int   port_num;
-  Frame rx_frame, tx_frame;
+  bool  port_open;
+  Frame rx_frame;  // Frame read from the robot
+  Frame tx_frame;  // Frame sent to the robot
 
-  Serial() : port_num(USB0) {}
+public:
+  Serial() : port_num(USB0), port_open(false) {}
   ~Serial() {}
 
   bool openPort()
@@ -54,29 +57,37 @@ public:
       this->port_num++;
       this->openPort();
     }
-    else return true;
+    else
+    {
+      port_open = true;
+      return true;
+    }
 
-    return false;
+    return (port_open = false);
   }
 
   void closePort()
   {
-    RS232_CloseComport(port_num);
+    if (port_open)
+      RS232_CloseComport(port_num);
   }
 
   void writeFrame()
   {
-    RS232_SendBuf(port_num, (unsigned char*)&tx_frame, sizeof(Frame));
+    prepareFrame();
+
+    if (port_open)
+      RS232_SendBuf(port_num, (unsigned char*)&tx_frame, sizeof(Frame));
   }
 
   bool readFrame()
   {
-    if (RS232_PollComport(port_num, (unsigned char*)&rx_frame, sizeof(Frame)) > 0)
+    if (port_open && RS232_PollComport(port_num, (unsigned char*)&rx_frame, sizeof(Frame)) > 0)
     {
       if ((rx_frame.header == FRAME_HEADER) && (rx_frame.group_number == FRAME_GROUP_NUMBER))
       {
         // Omit header byte and include num_data_bytes byte in crc
-        // crc has different endianess
+        // crc has different endianess (sic!)
         uint16_t crc1 = CRC16(((uint8_t*) (&rx_frame) + 1), rx_frame.num_data_bytes + 1);  
         uint8_t c1 = rx_frame.crc >> 8;
         uint8_t c2 = 0xFF & rx_frame.crc;
@@ -90,16 +101,54 @@ public:
     return false;
   }
 
-  void prepareFrame(uint16_t mode, uint8_t command)
+  void setPose(float x, float y, float theta)
   {
-    tx_frame.command = command;
-    tx_frame.mode = mode;
+    tx_frame.x = x;
+    tx_frame.y = y;
+    tx_frame.theta = theta;
+  }
 
+  geometry_msgs::Pose2D getPose()
+  {
+    geometry_msgs::Pose2D pose;
+
+    pose.x = rx_frame.x;
+    pose.y = rx_frame.y;
+    pose.theta = rx_frame.theta;
+
+    return pose;
+  }
+
+  void setVelocities(float w_l, float w_r)
+  {
+    tx_frame.w_l =  (int16_t) (w_l * 2048.0f);
+    tx_frame.w_r = -(int16_t) (w_r * 2048.0f);
+  }
+
+  geometry_msgs::Twist getVelocities()
+  {
+    geometry_msgs::Twist velocity;
+
+    velocity.angular.x = rx_frame.w_l / 2048.0f;
+    velocity.angular.y = rx_frame.w_r / 2048.0f;
+
+    return velocity;
+  }
+
+  void setMode(uint16_t mode)
+  {
+    tx_frame.mode = mode;
+  }
+
+private:
+  void prepareFrame()
+  {
     // Omit header byte and include num_data_bytes byte for crc
-    // The crc has different endianess
+    // The crc has different endianess (sic!)
     uint16_t crc = CRC16(((uint8_t*)&tx_frame) + 1, (int)(tx_frame.num_data_bytes + 1));
     uint8_t crc1 = crc >> 8;
     uint8_t crc2 = 0xFF & crc;
+
     tx_frame.crc = crc1 + crc2 * 256;
    }
 
