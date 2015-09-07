@@ -6,23 +6,23 @@
 #include <signal.h>
 
 /***
-  This node interconnects the high-level controller
-  of the MTracker robot with the low-level driver
-  implemented on the robots microprocessor. It 
-  subscribes to messeges of type geometry_msgs/Twist
-  published under /controls topic and publish the
-  odometry information obtained from the robot as
-  geometry_msgs/Pose2D message under topic /pose
-  as well as geometry_msgs/Twist message under topic
-  velocity.
+ * This node interconnects the high-level controller
+ * of the MTracker robot with the low-level driver
+ * implemented on the robots microprocessor. It
+ * subscribes to messeges of type geometry_msgs/Twist
+ * published under /controls topic and publish the
+ * odometry information obtained from the robot as
+ * geometry_msgs/Pose2D message under topic /pose
+ * as well as geometry_msgs/Twist message under topic
+ * velocity.
 
-  This node works in synchronous manner, meaning that
-  it has quasi-constant cycle time set to 100 Hz.
+ * This node works in synchronous manner, meaning that
+ * it has quasi-constant cycle time set to 100 Hz.
 
-  Mateusz Przybyla
-  Chair of Control and Systems Engineering
-  Faculty of Computing
-  Poznan University of Technology
+ * Mateusz Przybyla
+ * Chair of Control and Systems Engineering
+ * Faculty of Computing
+ * Poznan University of Technology
 ***/
 
 

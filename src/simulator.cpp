@@ -4,24 +4,24 @@
 #include "tf/transform_broadcaster.h"
 
 /***
-  This node simulates the behavior of a real MTracker
-  robot. It receives the /controls signals and publish
-  the virtual odometry information as /virtual_pose and 
-  /virtual_velocity. It also broadcasts the tf frame 
-  /virtual_base. The node works in synchronous manner
-  with the default rate of 100 Hz.
+ * This node simulates the behavior of a real MTracker
+ * robot. It receives the /controls signals and publish
+ * the virtual odometry information as /virtual_pose and
+ * /virtual_velocity. It also broadcasts the tf frame
+ * /virtual_base. The node works in synchronous manner
+ * with the default rate of 100 Hz.
 
-  Mateusz Przybyla
-  Chair of Control and Systems Engineering
-  Faculty of Computing
-  Poznan University of Technology
+ * Mateusz Przybyla
+ * Chair of Control and Systems Engineering
+ * Faculty of Computing
+ * Poznan University of Technology
 ***/
 
 
 struct Simulator
 {
-  geometry_msgs::Pose2D pose;      // Pose of the virtual robot
-  geometry_msgs::Twist  velocity;  // Velocity of the virtual robot
+  geometry_msgs::Pose2D pose;
+  geometry_msgs::Twist  velocity;
   geometry_msgs::Twist  controls;
 
   double Tp, Tf;

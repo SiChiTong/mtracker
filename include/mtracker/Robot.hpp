@@ -85,7 +85,7 @@ public:
 
   bool triggerCallback(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res)
   {
-    switchMotors(req.motors_on);
+    switchMotors(req.trigger);
     return true;
   }
 };

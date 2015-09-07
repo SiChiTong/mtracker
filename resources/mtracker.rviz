@@ -51,7 +51,7 @@ Visualization Manager:
       Frame Timeout: 99999
       Frames:
         All Enabled: true
-        virtual_base:
+        virtual_robot:
           Value: true
         world:
           Value: true
@@ -62,7 +62,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          virtual_base:
+          virtual_robot:
             {}
       Update Interval: 0
       Value: true
@@ -98,7 +98,7 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 116.592
+      Scale: 274.892
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
       X: 0
@@ -122,5 +122,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1615
-  X: 57
-  Y: -4
+  X: 58
+  Y: 24

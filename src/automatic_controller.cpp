@@ -3,22 +3,22 @@
 #include "geometry_msgs/Twist.h"
 
 /***
-  This node provides the user with an automatic controller
-  for semi-autonomous motion of MTracker. It requires the
-  position of the robot as a geometry_msgs/Pose2D message
-  being published under topic /pose. Additionally it can 
-  make use of the information from /velocity topic. 
+ * This node provides the user with an automatic controller
+ * for semi-autonomous motion of MTracker. It requires the
+ * position of the robot as a geometry_msgs/Pose2D message
+ * being published under topic /pose. Additionally it can
+ * make use of the information from /velocity topic.
 
-  It also needs the reference trajectory published as a 
-  geometry_msgs/Pose2D message under topic /reference_pose. 
-  It can also use the /reference_velocity information.
-  As a result it publishes control signals under topic 
-  /controls.
+ * It also needs the reference trajectory published as a
+ * geometry_msgs/Pose2D message under topic /reference_pose.
+ * It can also use the /reference_velocity information.
+ * As a result it publishes control signals under topic
+ * /controls.
 
-  Mateusz Przybyla
-  Chair of Control and Systems Engineering
-  Faculty of Computing
-  Poznan University of Technology
+ * Mateusz Przybyla
+ * Chair of Control and Systems Engineering
+ * Faculty of Computing
+ * Poznan University of Technology
 ***/
 
 class AutomaticController {

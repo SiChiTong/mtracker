@@ -1,15 +1,25 @@
-<!-- MTracker simulator launch file. -->
+<!-- Manually controlled simulator of MTracker. -->
 <launch>
   <arg name="robot_number" default="1"/>
+  <arg name="sampling_time" default="0.01"/>
 
-  <node pkg="mtracker" type="simulator" name="simulator_$(arg robot_number)" args="$(arg robot_number)"/>
+  <node pkg="mtracker" type="simulator" name="simulator_$(arg robot_number)" args="$(arg robot_number)">
+  	<remap from="/virtual_pose" to="/pose"/>
+  	<remap from="/virtual_velocity" to="/velocity"/>
+  </node>
   
-  <node pkg="mtracker" type="manual_controller" name="manual_controller"/>
+  <node pkg="mtracker" type="manual_controller" name="manual_controller">
+  	<param name="v_gain" value="0.5"/>
+  	<param name="w_gain" value="0.9"/>
+  </node>
   
   <node pkg="joy" type="joy_node" name="joy">
     <param name="dev" type="string" value="/dev/input/js0"/>
     <param name="deadzone" value="0.0"/>
+    <param name="autorepeat_rate" value="100"/>
   </node>
+  
+  <node pkg="mtracker" type="trajectory_recorder" name="trajectory_recorder"/>
   
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find mtracker)/resources/mtracker.rviz"/>
 </launch>

@@ -2,21 +2,21 @@
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/Twist.h"
 
-/***
-  This node provides the user with a manual controller
-  for teleoperation purposes. It requires messages of
-  type sensors_msgs/Joy being published under topic /joy
-  in order to work. It translates the joystick values
-  into the proper control signals, which are further
-  published under topic /controls. It works in an
-  asynchronous manner, meaning that the control signals
-  are published only after the new joystick signals
-  arrive.
+/*** 
+ * This node provides the user with a manual controller
+ * for teleoperation purposes. It requires messages of
+ * type sensors_msgs/Joy being published under topic /joy
+ * in order to work. It translates the joystick values
+ * into the proper control signals, which are further
+ * published under topic /controls. It works in an
+ * asynchronous manner, meaning that the control signals
+ * are published only after the new joystick signals
+ * arrive.
 
-  Mateusz Przybyla
-  Chair of Control and Systems Engineering
-  Faculty of Computing
-  Poznan University of Technology
+ * Mateusz Przybyla
+ * Chair of Control and Systems Engineering
+ * Faculty of Computing
+ * Poznan University of Technology
 ***/
 
 
@@ -40,10 +40,10 @@ struct ManualController
   {
     static ros::NodeHandle nh_priv("~");
     if (!nh_priv.getParam("v_gain", k_v))
-      k_v = 0.05;
+      k_v = 0.2;
 
     if (!nh_priv.getParam("w_gain", k_w))
-      k_w = 0.05;
+      k_w = 0.2;
   }
 };
 

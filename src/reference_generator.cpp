@@ -4,18 +4,18 @@
 #include "tf/transform_broadcaster.h"
 
 /***
-  This is a time-based reference trajectory generator 
-  used for the automatic controller of the MTracker. 
-  It calculates the pose and velocity of a reference 
-  robot and publishes them under topics /reference_pose
-  and /reference_velocity, respectively. It also 
-  broadcasts the tf frame called /reference. The node
-  works synchronously with a rate of 100 Hz.
+ * This is a time-based reference trajectory generator
+ * used for the automatic controller of the MTracker.
+ * It calculates the pose and velocity of a reference
+ * robot and publishes them under topics /reference_pose
+ * and /reference_velocity, respectively. It also
+ * broadcasts the tf frame called /reference. The node
+ * works synchronously with a rate of 100 Hz.
 
-  Mateusz Przybyla
-  Chair of Control and Systems Engineering
-  Faculty of Computing
-  Poznan University of Technology
+ * Mateusz Przybyla
+ * Chair of Control and Systems Engineering
+ * Faculty of Computing
+ * Poznan University of Technology
 ***/
 
 
