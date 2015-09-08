@@ -1,6 +1,6 @@
 ## MTracker package for ROS 
 
-#### The package was written for ROS version Hydromedusa. It contains several nodes which serve as an interface for MTracker users. MTracker is a two-wheeled miniature mobile robot designed and produced at Chair of Control and Systems Engineering of Poznan University of Technology, Poland. 
+#### The package was written for ROS version Hydromedusa but should work with any further versions. It contains several nodes which serve as an interface for MTracker users. MTracker is a two-wheeled miniature mobile robot designed and produced at Chair of Control and Systems Engineering of Poznan University of Technology, Poland. The package also contains several launch files designed to start various scenarios (e.g. real robot with manual control, simulated robot with manual control).
 
 #### The current nodes include:
 * The `mtracker` node - the main driver of the robot which collects the control signals (from the `/controls` topic) and delivers them to the low-level controller but also reads the odometry information from the robot and publishes it under topics `/pose` and `/velocity`. It also publishes a "robot" tf frame for visualisation purposes.

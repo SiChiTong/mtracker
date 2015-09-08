@@ -5,14 +5,14 @@
 /*** 
  * This node provides the user with a manual controller
  * for teleoperation purposes. It requires messages of
- * type sensors_msgs/Joy being published under topic /joy
+ * type sensors_msgs/Joy being published under topic joy
  * in order to work. It translates the joystick values
  * into the proper control signals, which are further
- * published under topic /controls. It works in an
+ * published under topic controls. It works in an
  * asynchronous manner, meaning that the control signals
  * are published only after the new joystick signals
  * arrive.
-
+ *
  * Mateusz Przybyla
  * Chair of Control and Systems Engineering
  * Faculty of Computing
@@ -25,6 +25,7 @@ struct ManualController
   ros::Publisher controls_pub;
   geometry_msgs::Twist controls;
 
+  // Parameters
   double k_v;  // Linear velocity gain
   double k_w;  // Angular velocity gain
 
@@ -33,7 +34,8 @@ struct ManualController
     controls.linear.x  = k_v * joy_msg->axes[1];
     controls.angular.z = k_w * joy_msg->axes[0];
 
-    controls_pub.publish(controls);
+    if (joy_msg->buttons[0])
+      controls_pub.publish(controls);
   }
 
   void updateParams(const ros::TimerEvent& e)
@@ -60,10 +62,9 @@ int main(int argc, char **argv)
     mc.updateParams(e);
   }
 
-  mc.controls_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
-  ros::Subscriber joy_sub  = n.subscribe("/joy", 10, &ManualController::joyCallback, &mc);
+  mc.controls_pub = n.advertise<geometry_msgs::Twist>("controls", 10);
+  ros::Subscriber joy_sub  = n.subscribe("joy", 10, &ManualController::joyCallback, &mc);
   ros::Timer params_tim = n.createTimer(ros::Duration(0.25), &ManualController::updateParams, &mc);
-
 
   ROS_INFO("MTracker manual controller start");
 

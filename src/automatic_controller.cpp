@@ -6,14 +6,14 @@
  * This node provides the user with an automatic controller
  * for semi-autonomous motion of MTracker. It requires the
  * position of the robot as a geometry_msgs/Pose2D message
- * being published under topic /pose. Additionally it can
- * make use of the information from /velocity topic.
+ * being published under topic pose. Additionally it can
+ * make use of the information from velocity topic.
 
  * It also needs the reference trajectory published as a
- * geometry_msgs/Pose2D message under topic /reference_pose.
- * It can also use the /reference_velocity information.
+ * geometry_msgs/Pose2D message under topic reference_pose.
+ * It can also use the reference_velocity information.
  * As a result it publishes control signals under topic
- * /controls.
+ * controls.
 
  * Mateusz Przybyla
  * Chair of Control and Systems Engineering
@@ -21,17 +21,14 @@
  * Poznan University of Technology
 ***/
 
-class AutomaticController {
-public:
-  ros::Publisher  ctrl_pub;
-  ros::Subscriber pos_sub;
-  ros::Subscriber vel_sub;
-  ros::Subscriber ref_pos_sub;
-  ros::Subscriber ref_vel_sub;
-
+struct AutomaticController
+{
   geometry_msgs::Pose2D pose, ref_pose;
   geometry_msgs::Twist  velocity, ref_velocity;
   geometry_msgs::Twist  controls;
+
+  // Parameters
+  int loop_rate;
 
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos_msg)
   {
@@ -47,6 +44,7 @@ public:
   void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pos_msg)
   {
     ref_pose = *ref_pos_msg;
+    ref_pose.theta = atan2(sin(ref_pose.theta), cos(ref_pose.theta));
   }
 
   void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_vel_msg)
@@ -62,36 +60,48 @@ public:
     controls.angular.z = 0.0;
   }
 
-  void publishControls()
+  void updateParameters(const ros::TimerEvent& event)
   {
-    ctrl_pub.publish(controls);
+    ros::NodeHandle nh_global;
+
+    if (!nh_global.getParam("loop_rate", loop_rate))
+    {
+      loop_rate = 100;
+      nh_global.setParam("loop_rate", loop_rate);
+    }
   }
 };
 
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   AutomaticController ac;
 
   ros::init(argc, argv, "automatic_controller");
   ros::NodeHandle n;
 
-  ac.ctrl_pub = n.advertise<geometry_msgs::Twist>("/controls", 10);
-  ac.pos_sub  = n.subscribe("/pose", 10, &AutomaticController::poseCallback, &ac);
-  ac.vel_sub  = n.subscribe("/velocity", 10, &AutomaticController::velocityCallback, &ac);
-  ac.ref_pos_sub = n.subscribe("/reference_pose", 10, &AutomaticController::refPoseCallback, &ac);
-  ac.ref_vel_sub = n.subscribe("/reference_velocity", 10, &AutomaticController::refVelocityCallback, &ac);
+  {
+    ros::TimerEvent e;
+    ac.updateParameters(e);
+  }
+
+  ros::Publisher  ctrl_pub = n.advertise<geometry_msgs::Twist>("controls", 10);
+  ros::Subscriber pos_sub = n.subscribe("pose", 10, &AutomaticController::poseCallback, &ac);
+  ros::Subscriber vel_sub = n.subscribe("velocity", 10, &AutomaticController::velocityCallback, &ac);
+  ros::Subscriber ref_pos_sub = n.subscribe("reference_pose", 10, &AutomaticController::refPoseCallback, &ac);
+  ros::Subscriber ref_vel_sub = n.subscribe("reference_velocity", 10, &AutomaticController::refVelocityCallback, &ac);
+  ros::Timer      params_tim = n.createTimer(ros::Duration(0.25), &AutomaticController::updateParameters, &ac);
 
   ROS_INFO("MTracker automatic controller start");
 
-  ros::Rate rate(100.0);
+  ros::Rate rate(ac.loop_rate);
 
   while (ros::ok())
   {
     ros::spinOnce();
 
     ac.computeControls();
-    ac.publishControls();
+    ctrl_pub.publish(ac.controls);
 
     rate.sleep();
   }
