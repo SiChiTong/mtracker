@@ -7,11 +7,11 @@
  * This is a time-based reference trajectory generator
  * used for the automatic controller of the MTracker.
  * It calculates the pose and velocity of a reference
- * robot and publishes them under topics /reference_pose
- * and /reference_velocity, respectively. It also
- * broadcasts the tf frame called /reference. The node
- * works synchronously with a rate of 100 Hz.
-
+ * robot and publishes them under topics reference_pose
+ * and reference_velocity, respectively. It also
+ * broadcasts the tf frame called reference_robot. The
+ * node works synchronously with a rate of 100 Hz.
+ *
  * Mateusz Przybyla
  * Chair of Control and Systems Engineering
  * Faculty of Computing
@@ -24,11 +24,12 @@ struct ReferenceGenerator
   geometry_msgs::Pose2D ref_pose;
   geometry_msgs::Twist  ref_velocity;
 
+  // Parameters
   enum TrajectoryType { POINT, LINEAR, CIRCULAR, POLYNOMIAL } trajectory;
   double x_o, y_o, theta_o;
   double v, w;
   double R;
-  double Tp;
+  int loop_rate;
   bool publish_tf;
 
   void calculateRefPose(double t)
@@ -77,45 +78,42 @@ struct ReferenceGenerator
 
   void updateParams(const ros::TimerEvent& event)
   {
-    // Global params
-    static ros::NodeHandle nh;
+    static ros::NodeHandle nh_global;
+    static ros::NodeHandle nh_local("~");
 
-    if (!nh.getParam("sampling_time", Tp))
+    if (!nh_global.getParam("loop_rate", loop_rate))
     {
-      Tp = 0.01;
-      nh.setParam("sampling_time", Tp);
+      loop_rate = 100;
+      nh_global.setParam("loop_rate", loop_rate);
     }
 
-    // Local params
-    static ros::NodeHandle nh_priv("~");
-
     int trajectory_type;
-    if (!nh_priv.getParam("trajectory_type", trajectory_type))
+    if (!nh_local.getParam("trajectory_type", trajectory_type))
       trajectory_type == 0;
 
     if (trajectory_type == 1) trajectory = LINEAR;
     else if (trajectory_type == 2) trajectory = CIRCULAR;
     else trajectory = POINT;
 
-    if (!nh_priv.getParam("x_origin", x_o))
+    if (!nh_local.getParam("x_origin", x_o))
       x_o = 0.0;
-    if (!nh_priv.getParam("y_origin", y_o))
+    if (!nh_local.getParam("y_origin", y_o))
       y_o = 0.0;
-    if (!nh_priv.getParam("theta_origin", theta_o))
+    if (!nh_local.getParam("theta_origin", theta_o))
       theta_o = 0.0;
-    if (!nh_priv.getParam("velocity", v))
+    if (!nh_local.getParam("velocity", v))
       v = 0.0;
-    if (!nh_priv.getParam("omega", w))
+    if (!nh_local.getParam("omega", w))
       w = 0.0;
-    if (!nh_priv.getParam("radius", R))
+    if (!nh_local.getParam("radius", R))
       R = 0.0;
-    if (!nh_priv.getParam("publish_tf", publish_tf))
+    if (!nh_local.getParam("publish_tf", publish_tf))
       publish_tf = true;
   }
 };
 
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   ros::init(argc, argv, "reference_generator");
   ros::NodeHandle n;
@@ -127,13 +125,13 @@ int main(int argc, char **argv)
     r.updateParams(e);
   }
 
-  ros::Publisher ref_pose_pub     = n.advertise<geometry_msgs::Pose2D>("/reference_pose", 10);
-  ros::Publisher ref_velocity_pub = n.advertise<geometry_msgs::Twist>("/reference_velocity", 10);
+  ros::Publisher ref_pose_pub     = n.advertise<geometry_msgs::Pose2D>("reference_pose", 10);
+  ros::Publisher ref_velocity_pub = n.advertise<geometry_msgs::Twist>("reference_velocity", 10);
   ros::Timer     params_tim       = n.createTimer(ros::Duration(0.25), &ReferenceGenerator::updateParams, &r);
 
   ROS_INFO("MTracker reference generator start");
 
-  ros::Rate rate(1.0 / r.Tp);
+  ros::Rate rate(r.loop_rate);
   ros::Time tic = ros::Time::now();
 
   while (ros::ok())
@@ -153,7 +151,7 @@ int main(int argc, char **argv)
 
       ref_pose_tf.setOrigin(tf::Vector3(r.ref_pose.x, r.ref_pose.y, 0.0));
       ref_pose_tf.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, r.ref_pose.theta));
-      ref_pose_bc.sendTransform(tf::StampedTransform(ref_pose_tf, ros::Time::now(), "/world", "/reference"));
+      ref_pose_bc.sendTransform(tf::StampedTransform(ref_pose_tf, ros::Time::now(), "world", "reference_robot"));
     }
 
     ref_pose_pub.publish(r.ref_pose);

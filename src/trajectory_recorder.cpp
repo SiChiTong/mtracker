@@ -12,7 +12,8 @@
  * it synchronously saves consecutive Poses and Velocities obtained
  * from the robot or its simulation. It can be further processed as
  * reference trajectory for some other robot. The data is stored in
- * a .yaml file.
+ * a .yaml file. To trigger data recording on, a ros service call
+ * must be made for the "trajectory_recorder" service.
  *
  * Mateusz Przybyla
  * Chair of Control and Systems Engineering
@@ -20,9 +21,8 @@
  * Poznan University of Technology
 ***/
 
-class Recorder
+struct Recorder
 {
-public:
   std::vector<double> x, y, theta;
   std::vector<double> v, w;
 
@@ -33,7 +33,7 @@ public:
 
   Recorder() : file_number(1), recording_data(false) {}
 
-  void poseCallback(const geometry_msgs::Pose2D::ConstPtr &pose_msg)
+  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg)
   {
     if (recording_data)
     {
@@ -43,7 +43,7 @@ public:
     }
   }
 
-  void velocityCallback(const geometry_msgs::Twist::ConstPtr &velocity_msg)
+  void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg)
   {
     if (recording_data)
     {
@@ -52,7 +52,7 @@ public:
     }
   }
 
-  bool triggerRecording(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+  bool triggerRecording(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
   {
     if (recording_data)
     {
@@ -98,7 +98,9 @@ public:
       emitter << YAML::EndMap;
     emitter << YAML::EndSeq;
 
-    std::string filename = "/home/tysik/MTrackerRecord_" + std::to_string(file_number) + ".yaml";
+    std::string username = getenv("USER");
+    std::cout << username << std::endl;
+    std::string filename = "/home/" + username + "/MTrackerRecords/MTrackerRecord_" + std::to_string(file_number) + ".yaml";
     std::ofstream file(filename);
 
     file << emitter.c_str();
@@ -106,16 +108,18 @@ public:
 };
 
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   ros::init(argc, argv, "trajectory_recorder");
   ros::NodeHandle n;
 
   Recorder r;
 
-  ros::Subscriber pose_sub = n.subscribe<geometry_msgs::Pose2D>("/pose", 10, &Recorder::poseCallback, &r);
-  ros::Subscriber velocity_sub = n.subscribe<geometry_msgs::Twist>("/velocity", 10, &Recorder::velocityCallback, &r);
-  ros::ServiceServer trig_srv = n.advertiseService("/trajectory_recorder", &Recorder::triggerRecording, &r);
+  ros::Subscriber pose_sub = n.subscribe<geometry_msgs::Pose2D>("pose", 10, &Recorder::poseCallback, &r);
+  ros::Subscriber velocity_sub = n.subscribe<geometry_msgs::Twist>("velocity", 10, &Recorder::velocityCallback, &r);
+  ros::ServiceServer trig_srv = n.advertiseService("trajectory_recorder", &Recorder::triggerRecording, &r);
+
+  ROS_INFO("MTracker trajectory recorder start");
 
   ros::spin();
 

@@ -1,25 +1,38 @@
 <!-- Manually controlled simulator of MTracker. -->
 <launch>
-  <arg name="robot_number" default="1"/>
-  <arg name="sampling_time" default="0.01"/>
+  <param name="loop_rate" value="100"/>
 
-  <node pkg="mtracker" type="simulator" name="simulator_$(arg robot_number)" args="$(arg robot_number)">
-  	<remap from="/virtual_pose" to="/pose"/>
-  	<remap from="/virtual_velocity" to="/velocity"/>
+  <node pkg="mtracker" type="simulator" name="simulator" output="screen">
+  	<param name="robot_inertia" value="0.2"/>
+  	<param name="publish_tf" value="true"/>
+  	
+  	<remap from="virtual_pose" to="pose"/>
+  	<remap from="virtual_velocity" to="velocity"/>
   </node>
-  
-  <node pkg="mtracker" type="manual_controller" name="manual_controller">
-  	<param name="v_gain" value="0.5"/>
-  	<param name="w_gain" value="0.9"/>
+
+  <node pkg="mtracker" type="reference_generator" name="reference_generator">
+    <param name="trajectory_type" value="2"/>
+    <param name="x_origin" value="0.0"/>
+    <param name="y_origin" value="0.0"/>
+    <param name="theta_origin" value="0.0"/>
+    <param name="velocity" value="0.2"/>
+    <param name="omega" value="0.8"/>
+    <param name="radius" value="0.4"/>
+    <param name="publish_tf" value="true"/>
   </node>
-  
+
+  <node pkg="mtracker" type="manual_controller" name="manual_controller" output="screen">
+  	<param name="v_gain" value="0.8"/>
+  	<param name="w_gain" value="1.5"/>
+  </node>
+
   <node pkg="joy" type="joy_node" name="joy">
     <param name="dev" type="string" value="/dev/input/js0"/>
     <param name="deadzone" value="0.0"/>
     <param name="autorepeat_rate" value="100"/>
   </node>
-  
+
   <node pkg="mtracker" type="trajectory_recorder" name="trajectory_recorder"/>
-  
+
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find mtracker)/resources/mtracker.rviz"/>
 </launch>

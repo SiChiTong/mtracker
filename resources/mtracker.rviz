@@ -50,18 +50,22 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 99999
       Frames:
-        All Enabled: true
+        All Enabled: false
+        reference_robot:
+          Value: true
         virtual_robot:
           Value: true
         world:
           Value: true
       Marker Scale: 1
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
         world:
+          reference_robot:
+            {}
           virtual_robot:
             {}
       Update Interval: 0

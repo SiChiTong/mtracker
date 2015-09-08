@@ -4,7 +4,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
-#include "mtracker/Trigger.h"
+#include "std_srvs/Empty.h"
 #include "Serial.hpp"
 #include <memory>
 
@@ -83,9 +83,10 @@ public:
     setWheelsVelocities(w_l, w_r);
   }
 
-  bool triggerCallback(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res)
+  bool triggerCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
   {
-    switchMotors(req.trigger);
+    //switchMotors(req.trigger);
+    switchMotors(true);
     return true;
   }
 };
