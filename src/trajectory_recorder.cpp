@@ -1,12 +1,3 @@
-#include "ros/ros.h"
-#include "geometry_msgs/Pose2D.h"
-#include "geometry_msgs/Twist.h"
-#include "std_srvs/Empty.h"
-#include "yaml-cpp/yaml.h"
-#include <fstream>
-#include <string>
-#include <ctime>
-
 /***
  * This node is used for trajectory recording. When triggered on,
  * it synchronously saves consecutive Poses and Velocities obtained
@@ -21,53 +12,68 @@
  * Poznan University of Technology
 ***/
 
-struct Recorder
+#include <ros/ros.h>
+#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/Twist.h>
+#include <std_srvs/Empty.h>
+
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+#include <string>
+#include <ctime>
+
+namespace mtracker
 {
-  std::vector<double> x, y, theta;
-  std::vector<double> v, w;
 
-  YAML::Emitter yaml;
+class Recorder
+{
+public:
+  Recorder() : nh_(""), nh_params_("~"), file_number_(1), recording_data_(false)
+  {
+    pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("pose", 10, &Recorder::poseCallback, this);
+    velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>("velocity", 10, &Recorder::velocityCallback, this);
+    trigger_srv_ = nh_.advertiseService("trigger_recording", &Recorder::triggerRecording, this);
 
-  bool recording_data;
-  int  file_number;
+    ROS_INFO("MTracker trajectory recorder start");
+  }
 
-  Recorder() : file_number(1), recording_data(false) {}
+  ~Recorder() {}
 
+private:
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg)
   {
-    if (recording_data)
+    if (recording_data_)
     {
-      x.push_back(pose_msg->x);
-      y.push_back(pose_msg->y);
-      theta.push_back(pose_msg->theta);
+      x_.push_back(pose_msg->x);
+      y_.push_back(pose_msg->y);
+      theta_.push_back(pose_msg->theta);
     }
   }
 
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg)
   {
-    if (recording_data)
+    if (recording_data_)
     {
-      v.push_back(velocity_msg->linear.x);
-      w.push_back(velocity_msg->angular.z);
+      v_.push_back(velocity_msg->linear.x);
+      w_.push_back(velocity_msg->angular.z);
     }
   }
 
   bool triggerRecording(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
   {
-    if (recording_data)
+    if (recording_data_)
     {
       emitYamlFile();
 
-      v.clear();
-      w.clear();
-      x.clear();
-      y.clear();
-      theta.clear();
-      file_number++;
+      v_.clear();
+      w_.clear();
+      x_.clear();
+      y_.clear();
+      theta_.clear();
+      file_number_++;
     }
 
-    recording_data = ~recording_data;
-
+    recording_data_ = ~recording_data_;
     return true;
   }
 
@@ -83,14 +89,14 @@ struct Recorder
     emitter << YAML::BeginSeq;
     emitter << YAML::Anchor("Pose");
       emitter << YAML::BeginMap;
-      emitter << YAML::Key << "x" << YAML::Value << YAML::Flow << x;
-      emitter << YAML::Key << "y" << YAML::Value << YAML::Flow << y;
-      emitter << YAML::Key << "theta" << YAML::Value << YAML::Flow << theta;
+      emitter << YAML::Key << "x" << YAML::Value << YAML::Flow << x_;
+      emitter << YAML::Key << "y" << YAML::Value << YAML::Flow << y_;
+      emitter << YAML::Key << "theta" << YAML::Value << YAML::Flow << theta_;
       emitter << YAML::EndMap;
     emitter << YAML::Anchor("Velocity");
       emitter << YAML::BeginMap;
-      emitter << YAML::Key << "v" << YAML::Value << YAML::Flow << v;
-      emitter << YAML::Key << "w" << YAML::Value << YAML::Flow << w;
+      emitter << YAML::Key << "v" << YAML::Value << YAML::Flow << v_;
+      emitter << YAML::Key << "w" << YAML::Value << YAML::Flow << w_;
       emitter << YAML::EndMap;
     emitter << YAML::Anchor("Parameters");
       emitter << YAML::BeginMap;
@@ -100,27 +106,35 @@ struct Recorder
 
     std::string username = getenv("USER");
     std::cout << username << std::endl;
-    std::string filename = "/home/" + username + "/MTrackerRecords/MTrackerRecord_" + std::to_string(file_number) + ".yaml";
+    std::string filename = "/home/" + username + "/MTrackerRecords/MTrackerRecord_" + std::to_string(file_number_) + ".yaml";
     std::ofstream file(filename);
 
     file << emitter.c_str();
   }
+
+  bool recording_data_;
+  int  file_number_;
+
+  std::vector<double> x_, y_, theta_;
+  std::vector<double> v_, w_;
+
+  YAML::Emitter yaml_;
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_params_;
+
+  ros::Subscriber pose_sub_;
+  ros::Subscriber velocity_sub_;
+  ros::ServiceServer trigger_srv_;
 };
+
+} // end namespace mtracker
 
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "trajectory_recorder");
-  ros::NodeHandle n;
-
-  Recorder r;
-
-  ros::Subscriber pose_sub = n.subscribe<geometry_msgs::Pose2D>("pose", 10, &Recorder::poseCallback, &r);
-  ros::Subscriber velocity_sub = n.subscribe<geometry_msgs::Twist>("velocity", 10, &Recorder::velocityCallback, &r);
-  ros::ServiceServer trig_srv = n.advertiseService("trajectory_recorder", &Recorder::triggerRecording, &r);
-
-  ROS_INFO("MTracker trajectory recorder start");
-
+  mtracker::Recorder r;
   ros::spin();
 
   return 0;

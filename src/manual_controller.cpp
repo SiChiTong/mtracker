@@ -1,7 +1,3 @@
-#include "ros/ros.h"
-#include "sensor_msgs/Joy.h"
-#include "geometry_msgs/Twist.h"
-
 /*** 
  * This node provides the user with a manual controller
  * for teleoperation purposes. It requires messages of
@@ -19,56 +15,94 @@
  * Poznan University of Technology
 ***/
 
+#include <ros/ros.h>
+#include <sensor_msgs/Joy.h>
+#include <geometry_msgs/Twist.h>
+#include <std_srvs/Empty.h>
 
-struct ManualController
+namespace mtracker
 {
-  ros::Publisher controls_pub;
-  geometry_msgs::Twist controls;
 
-  // Parameters
-  double k_v;  // Linear velocity gain
-  double k_w;  // Angular velocity gain
+class ManController
+{
+public:
+  ManController() : nh_(""), nh_params_("~"), mancontroller_switched_on_(false)
+  {
+    controls_pub_ = nh_.advertise<geometry_msgs::Twist>("controls", 10);
+    joy_sub_ = nh_.subscribe("joy", 10, &ManController::joyCallback, this);
+    keys_sub_ = nh_.subscribe("keys", 10, &ManController::keysCallback, this);
+    trigger_srv_ = nh_.advertiseService("mancontroller_trigger", &ManController::triggerService, this);
+    params_tim_ = nh_.createTimer(ros::Duration(0.25), &ManController::updateParams, this, false, false);
 
+    updateParams(ros::TimerEvent());
+
+    params_tim_.start();
+    ROS_INFO("MTracker manual controller start");
+  }
+
+  ~ManController() {}
+
+private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg)
   {
-    controls.linear.x  = k_v * joy_msg->axes[1];
-    controls.angular.z = k_w * joy_msg->axes[0];
+    if (mancontroller_switched_on_)
+    {
+      controls_.linear.x  = v_gain_ * joy_msg->axes[1];
+      controls_.angular.z = w_gain_ * joy_msg->axes[0];
+      controls_pub_.publish(controls_);
+    }
+  }
 
-    if (joy_msg->buttons[0])
-      controls_pub.publish(controls);
+  void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg)
+  {
+    if (mancontroller_switched_on_)
+    {
+      controls_ = *keys_msg;
+      controls_pub_.publish(controls_);
+    }
+  }
+
+  bool triggerService(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+  {
+    ROS_INFO("asd");
+    mancontroller_switched_on_ = !mancontroller_switched_on_;
+    return true;
   }
 
   void updateParams(const ros::TimerEvent& e)
   {
-    static ros::NodeHandle nh_priv("~");
-    if (!nh_priv.getParam("v_gain", k_v))
-      k_v = 0.2;
+    if (!nh_params_.getParam("v_gain", v_gain_))
+      v_gain_ = 0.2;
 
-    if (!nh_priv.getParam("w_gain", k_w))
-      k_w = 0.2;
+    if (!nh_params_.getParam("w_gain", w_gain_))
+      w_gain_ = 0.2;
   }
+
+  double v_gain_;  // Linear velocity gain
+  double w_gain_;  // Angular velocity gain
+  bool mancontroller_switched_on_;
+
+  geometry_msgs::Twist controls_;
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_params_;
+
+  ros::Publisher controls_pub_;
+  ros::Subscriber joy_sub_;
+  ros::Subscriber keys_sub_;
+  ros::ServiceServer trigger_srv_;
+  ros::Timer params_tim_;
 };
+
+} // end namespace mtracker
 
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "manual_controller");
-  ros::NodeHandle n;
-
-  ManualController mc;
-
-  {
-    ros::TimerEvent e;
-    mc.updateParams(e);
-  }
-
-  mc.controls_pub = n.advertise<geometry_msgs::Twist>("controls", 10);
-  ros::Subscriber joy_sub  = n.subscribe("joy", 10, &ManualController::joyCallback, &mc);
-  ros::Timer params_tim = n.createTimer(ros::Duration(0.25), &ManualController::updateParams, &mc);
-
-  ROS_INFO("MTracker manual controller start");
-
+  mtracker::ManController mc;
   ros::spin();
 
   return 0;
 }
+
