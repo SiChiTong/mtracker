@@ -1,23 +1,18 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>mtracker</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>The MTracker driver package</description>
-
-  <maintainer email="inz.mateusz.przybyla@gmail.com">MP</maintainer>
+  <maintainer email="inz.mateusz.przybyla@gmail.com">Mateusz Przybyla</maintainer>
+  <author>Mateusz Przybyla</author>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-
-  <build_depend>roscpp</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>joy</build_depend>
-
-  <run_depend>roscpp</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>joy</run_depend>
+  <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>tf</depend>
+  <depend>joy</depend>
 
   <export>
   </export>
