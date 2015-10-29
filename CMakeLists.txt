@@ -15,7 +15,7 @@ catkin_package(
 include_directories(include ${catkin_INCLUDE_DIRS}) #${Boost_INCLUDE_DIRS}
 
 add_executable(mtracker src/mtracker.cpp src/rs232.c
-               include/serial.hpp include/rs232.h)
+               include/serial.h include/rs232.h)
 target_link_libraries(mtracker ${catkin_LIBRARIES})
 
 add_executable(manual_controller src/manual_controller.cpp)
@@ -30,5 +30,5 @@ target_link_libraries(reference_generator ${catkin_LIBRARIES})
 add_executable(simulator src/simulator.cpp)
 target_link_libraries(simulator ${catkin_LIBRARIES})
 
-add_executable(trajectory_recorder src/trajectory_recorder.cpp)
+add_executable(trajectory_recorder src/trajectory_recorder.cpp include/trajectory_recorder.h)
 target_link_libraries(trajectory_recorder ${catkin_LIBRARIES} /usr/local/lib/libyaml-cpp.a)

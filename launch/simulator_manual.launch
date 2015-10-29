@@ -32,7 +32,13 @@
     <param name="autorepeat_rate" value="100"/>
   </node>
 
-  <node pkg="mtracker" type="trajectory_recorder" name="trajectory_recorder"/>
+  <node pkg="mtracker" type="trajectory_recorder" name="trajectory_recorder">
+    <param name="pose_topic"     type="string" value="pose"/>
+    <param name="velocity_topic" type="string" value="velocity"/>
+
+    <param name="use_yaml" type="bool" value="true"/>
+    <param name="use_txt"  type="bool" value="true"/>
+  </node>
 
   <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find mtracker)/resources/mtracker.rviz"/>
 </launch>
