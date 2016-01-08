@@ -27,7 +27,7 @@ target_link_libraries(automatic_controller ${catkin_LIBRARIES})
 add_executable(reference_generator src/reference_generator.cpp)
 target_link_libraries(reference_generator ${catkin_LIBRARIES})
 
-add_executable(simulator src/simulator.cpp)
+add_executable(simulator src/simulator.cpp include/simulator.h)
 target_link_libraries(simulator ${catkin_LIBRARIES})
 
 add_executable(trajectory_recorder src/trajectory_recorder.cpp include/trajectory_recorder.h)
