@@ -33,61 +33,39 @@
  * Author: Mateusz Przybyla
  */
 
+#ifndef MANUAL_CONTROLLER_H
+#define MANUAL_CONTROLLER_H
+
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
 
-#include "../include/manual_controller.h"
+namespace mtracker
+{
 
-using namespace mtracker;
+class AutomaticController
+{
+public:
+  AutomaticController();
 
-AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
-  initialize();
+private:
+  void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
+  void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg);
+  void initialize();
 
-  ROS_INFO("MTracker manual controller start");
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_local_;
 
-  ros::spin();
-}
+  ros::Subscriber joy_sub_;
+  ros::Subscriber keys_sub_;
+  ros::Publisher controls_pub_;
 
-void AutomaticController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
-  controls_.linear.x = v_gain_ * joy_msg->axes[1];
-  controls_.angular.z = w_gain_ * joy_msg->axes[0];
-  controls_pub_.publish(controls_);
-}
+  geometry_msgs::Twist controls_;
 
-void AutomaticController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
-  controls_.linear.x = v_gain_ * keys_msg->linear.x;
-  controls_.angular.z = w_gain_ * keys_msg->angular.z;
-  controls_pub_.publish(controls_);
-}
+  double v_gain_;  // Linear velocity gain
+  double w_gain_;  // Angular velocity gain
+};
 
-void AutomaticController::initialize() {
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+} // end namespace mtracker
 
-  std::string joy_topic;
-  if (!nh_.getParam("joy_topic", joy_topic))
-    joy_topic = "joy";
-
-  std::string keys_topic;
-  if (!nh_.getParam("keys_topic", keys_topic))
-    keys_topic = "keys";
-
-  if (!nh_local_.getParam("linear_gain", v_gain_))
-    v_gain_ = 0.1;
-
-  if (!nh_local_.getParam("angular_gain", w_gain_))
-    w_gain_ = 0.2;
-
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &AutomaticController::joyCallback, this);
-  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &AutomaticController::keysCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-}
-
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "manual_controller");
-  AutomaticController mc;
-  return 0;
-}
-
+#endif // MANUAL_CONTROLLER_H

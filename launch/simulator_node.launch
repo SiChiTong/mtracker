@@ -1,0 +1,11 @@
+<!-- MTracker simulator node launch file. -->
+<launch>
+  <param name="loop_rate" value="0.01"/>
+  <param name="controls_topic" type="string" value="controls"/>
+  <param name="virtual_pose_topic" type="string" value="virtual_pose"/>
+  <param name="virtual_velocity_topic" type="string" value="virtual_velocity"/>
+
+  <node name="simulator" pkg="mtracker" type="simulator" respawn="false" required="true" output="screen">
+    <param name="time_constant" value="0.1"/>
+  </node>
+</launch>

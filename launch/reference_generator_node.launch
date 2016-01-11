@@ -1,0 +1,11 @@
+<!-- MTracker reference generator node launch file. -->
+<launch>
+  <param name="loop_rate" value="0.01"/>
+  <param name="reference_pose_topic" type="string" value="reference_pose"/>
+  <param name="reference_velocity_topic" type="string" value="reference_velocity"/>
+
+  <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen">
+    <param name="trajectory_type" value="0"/>
+    <param name="trajectory_paused" type="bool" value="false"/>
+  </node>
+</launch>

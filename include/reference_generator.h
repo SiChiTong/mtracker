@@ -33,61 +33,52 @@
  * Author: Mateusz Przybyla
  */
 
+#ifndef REFERENCE_GENERATOR_H
+#define REFERENCE_GENERATOR_H
+
 #include <ros/ros.h>
-#include <sensor_msgs/Joy.h>
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3.h>
+#include <tf/transform_broadcaster.h>
 
-#include "../include/manual_controller.h"
+#include "../include/trajectories.h"
 
-using namespace mtracker;
+namespace mtracker
+{
 
-AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
-  initialize();
+class ReferenceGenerator
+{
+public:
+   ReferenceGenerator();
+  ~ReferenceGenerator();
 
-  ROS_INFO("MTracker manual controller start");
+private:
+  void initialize();
+  void start();
+  void stop();
+  void pause();
+  void update(double dt);
+  void publish();
 
-  ros::spin();
-}
+private:
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_local_;
 
-void AutomaticController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
-  controls_.linear.x = v_gain_ * joy_msg->axes[1];
-  controls_.angular.z = w_gain_ * joy_msg->axes[0];
-  controls_pub_.publish(controls_);
-}
+  ros::Publisher ref_pose_pub_;
+  ros::Publisher ref_velocity_pub_;
 
-void AutomaticController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
-  controls_.linear.x = v_gain_ * keys_msg->linear.x;
-  controls_.angular.z = w_gain_ * keys_msg->angular.z;
-  controls_pub_.publish(controls_);
-}
+  tf::TransformBroadcaster tf_br_;
+  tf::StampedTransform tf_;
 
-void AutomaticController::initialize() {
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  int loop_rate_;
 
-  std::string joy_topic;
-  if (!nh_.getParam("joy_topic", joy_topic))
-    joy_topic = "joy";
+  Trajectory* trajectory_;
+  double time_;
+  bool paused_;
 
-  std::string keys_topic;
-  if (!nh_.getParam("keys_topic", keys_topic))
-    keys_topic = "keys";
+  geometry_msgs::Vector3 ref_pose_;
+  geometry_msgs::Vector3 ref_velocity_;
+};
 
-  if (!nh_local_.getParam("linear_gain", v_gain_))
-    v_gain_ = 0.1;
+} // namespace mtracker
 
-  if (!nh_local_.getParam("angular_gain", w_gain_))
-    w_gain_ = 0.2;
-
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &AutomaticController::joyCallback, this);
-  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &AutomaticController::keysCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-}
-
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "manual_controller");
-  AutomaticController mc;
-  return 0;
-}
-
+#endif // REFERENCE_GENERATOR_H
