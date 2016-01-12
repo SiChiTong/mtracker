@@ -58,12 +58,10 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), com_(new Serial("/dev/ttyUSB0"))
   while (nh_.ok()) {
     ros::spinOnce();
 
-    sendData();
-    if (com_->readFrame()) {
-      odom_pose_pub_.publish(odom_pose_);
-      odom_velocity_pub_.publish(odom_velocity_);
-      publishTransform();
-    }
+    transferData();
+    odom_pose_pub_.publish(odom_pose_);
+    odom_velocity_pub_.publish(odom_velocity_);
+    publishTransform();
 
     rate.sleep();
   }
@@ -98,15 +96,24 @@ void MTracker::initialize() {
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &MTracker::controlsCallback, this);
   odom_pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
   odom_velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
+
+  com_->setPose(x, y, theta);
+  com_->setMode(MODE_SET_ODOMETRY);
+  com_->writeFrame();
 }
 
-void MTracker::setWheelsVelocities() {
+void MTracker::transferData() {
   double w_l = (controls_.linear.x - ROBOT_BASE * controls_.angular.z / 2.0) / WHEEL_RADIUS;
   double w_r = (controls_.linear.x + ROBOT_BASE * controls_.angular.z / 2.0) / WHEEL_RADIUS;
 
   com_->setVelocities(w_l, w_r);
   com_->setMode(MODE_MOTORS_ON);
+
   com_->writeFrame();
+  com_->readFrame();
+
+  odom_pose_ = com_->getPose();
+  odom_velocity_ = com_->getVelocities();
 }
 
 void MTracker::publishTransform() {
@@ -134,14 +141,6 @@ void MTracker::switchMotors(bool motors_on) {
 
   com_->writeFrame();
 }
-
-
-void setOdometryPose(float x, float y, float theta) {
-  com_->setPose(x, y, theta);
-  com_->setMode(MODE_SET_ODOMETRY);
-  com_->writeFrame();
-}
-
 
 //  geometry_msgs::Pose2D getRobotPose() {
 //    return com_->getPose();

@@ -93,8 +93,8 @@ public:
     return port_.is_open();
   }
 
-  void writeChar(char* data, size_t size) {
-    port_.write_some(boost::asio::buffer(data, size));
+  void writeChar(char c) {
+    port_.write_some(boost::asio::buffer(&c, 1));
   }
 
   char readChar() {
@@ -103,40 +103,48 @@ public:
     return c;
   }
 
-  void writeFrame()
-  {
-    prepareFrame();
-
-    if (port_open)
-      RS232_SendBuf(port_num, (unsigned char*)&tx_frame, sizeof(Frame));
+  void write(char* data, size_t size) {
+    port_.write_some(boost::asio::buffer(data, size));
   }
 
-  bool readFrame()
-  {
-    if (port_open && RS232_PollComport(port_num, (unsigned char*)&rx_frame, sizeof(Frame)) > 0)
-    {
-      if ((rx_frame.header == FRAME_HEADER) && (rx_frame.group_number == FRAME_GROUP_NUMBER))
-      {
-        // Omit header byte and include num_data_bytes byte in crc
-        // crc has different endianess (sic!)
-        uint16_t crc1 = CRC16(((uint8_t*) (&rx_frame) + 1), rx_frame.num_data_bytes + 1);  
-        uint8_t c1 = rx_frame.crc >> 8;
-        uint8_t c2 = 0xFF & rx_frame.crc;
-        uint16_t crc2 = c1 + 256 * c2;
+  void read(char* data, size_t size) {
+    port_.read_some(boost::asio::buffer(data, size));
+  }
 
-        if (crc1 == crc2)
-          return true;
-      }
+  void writeFrame() {
+    prepareFrame();
+
+    write((char*)&tx_frame, sizeof(Frame));
+  }
+
+  bool readFrame() {
+    read((char*)&rx_frame, sizeof(Frame));
+
+    if ((rx_frame.header == FRAME_HEADER) && (rx_frame.group_number == FRAME_GROUP_NUMBER)) {
+      // Omit header byte and include num_data_bytes byte in crc
+      // crc has different endianess (sic!)
+      uint16_t crc1 = CRC16(((uint8_t*) (&rx_frame) + 1), rx_frame.num_data_bytes + 1);
+      uint8_t c1 = rx_frame.crc >> 8;
+      uint8_t c2 = 0xFF & rx_frame.crc;
+      uint16_t crc2 = c1 + 256 * c2;
+
+      if (crc1 == crc2)
+        return true;
     }
 
     return false;
   }
 
-  void setPose(float x, float y, float theta) {
+  void initializeOdometry(float x, float y, float theta) {
     tx_frame.x = x;
     tx_frame.y = y;
     tx_frame.theta = theta;
   }
+
+  void setVelocities(float w_l, float w_r) {
+    tx_frame.w_l =  (int16_t) (w_l * 2048.0f);
+    tx_frame.w_r = -(int16_t) (w_r * 2048.0f);
+  }  
 
   geometry_msgs::Pose2D getPose() {
     geometry_msgs::Pose2D pose;
@@ -146,11 +154,6 @@ public:
     pose.theta = rx_frame.theta;
 
     return pose;
-  }
-
-  void setVelocities(float w_l, float w_r) {
-    tx_frame.w_l =  (int16_t) (w_l * 2048.0f);
-    tx_frame.w_r = -(int16_t) (w_r * 2048.0f);
   }
 
   geometry_msgs::Twist getVelocities() {
@@ -166,9 +169,7 @@ public:
     tx_frame.mode = mode;
   }
 
-private:
-  void prepareFrame()
-  {
+  void prepareFrame() {
     // Omit header byte and include num_data_bytes byte for crc
     // The crc has different endianess (sic!)
     uint16_t crc = CRC16(((uint8_t*)&tx_frame) + 1, (int)(tx_frame.num_data_bytes + 1));
@@ -178,8 +179,8 @@ private:
     tx_frame.crc = crc1 + crc2 * 256;
    }
 
-  uint16_t CRC16(const uint8_t *data, int len)
-  {
+
+  uint16_t CRC16(const uint8_t *data, int len) {
     static const uint16_t crc_table[] = {
       0x0000,0x8005,0x800F,0x000A,0x801B,0x001E,0x0014,0x8011,
       0x8033,0x0036,0x003C,0x8039,0x0028,0x802D,0x8027,0x0022,
@@ -223,14 +224,13 @@ private:
     return crc_word;
   }
 
+
   boost::asio::io_service io_;
   boost::asio::serial_port port_;
   std::string port_name_;
 
-  int   port_num;
   Frame rx_frame;  // Frame read from the robot
   Frame tx_frame;  // Frame sent to the robot
-
 };
 
 } // namespace mtracker

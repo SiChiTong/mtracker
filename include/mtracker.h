@@ -62,8 +62,7 @@ private:
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
 
   void initialize();
-  void sendData();
-  void readData();
+  void transferData();
 
   void switchMotors(bool motors_on);
   void setVelocities();
