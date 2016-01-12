@@ -3,7 +3,7 @@ project(mtracker)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 
-find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs std_srvs tf joy)
+find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs tf joy)
 #find_package(Boost REQUIRED COMPONENTS xxx)
 
 catkin_package(
@@ -14,9 +14,8 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS}) #${Boost_INCLUDE_DIRS}
 
-#add_executable(mtracker src/mtracker.cpp src/rs232.c
-#               include/serial.h include/rs232.h)
-#target_link_libraries(mtracker ${catkin_LIBRARIES})
+add_executable(mtracker src/mtracker.cpp include/mtracker.h include/serial.h)
+target_link_libraries(mtracker ${catkin_LIBRARIES})
 
 add_executable(manual_controller src/manual_controller.cpp include/manual_controller.h)
 target_link_libraries(manual_controller ${catkin_LIBRARIES})

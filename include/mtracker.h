@@ -33,48 +33,64 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef AUTOMATIC_CONTROLLER_H
-#define AUTOMATIC_CONTROLLER_H
+#ifndef MTRACKER_H
+#define MTRACKER_H
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PointStamped.h>
+#include <tf/transform_broadcaster.h>
+#include <std_srvs/Empty.h>
+#include <signal.h>
+#include <memory>
+
+#include "serial.h"
 
 namespace mtracker
 {
 
-class AutomaticController
+class MTracker
 {
 public:
-  AutomaticController();
+  MTracker();
 
 private:
-  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
-  void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);
-  void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg);
-  void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg);
+  const double ROBOT_BASE;
+  const double WHEEL_RADIUS;
+
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
 
   void initialize();
-  void computeControls();
+  void sendData();
+  void readData();
+
+  void switchMotors(bool motors_on);
+  void setVelocities();
+  void stopWheels();
+
+  void publishTransform();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
-  ros::Subscriber pose_sub_;
-  ros::Subscriber velocity_sub_;
-  ros::Subscriber ref_pose_sub_;
-  ros::Subscriber ref_velocity_sub_;
-  ros::Publisher controls_pub_;
+  ros::Subscriber controls_sub_;
+  ros::Publisher odom_pose_pub_;
+  ros::Publisher odom_velocity_pub_;
+  ros::Publisher path_pub_;
 
+  tf::TransformBroadcaster pose_bc_;
+  tf::Transform pose_tf_;
+
+  geometry_msgs::Pose2D odom_pose_;
+  geometry_msgs::Twist odom_velocity_;
   geometry_msgs::Twist controls_;
-  geometry_msgs::Pose2D pose_;
-  geometry_msgs::Twist velocity_;
-  geometry_msgs::Pose2D ref_pose_;
-  geometry_msgs::Twist ref_velocity_;
+
+  Serial* com_;
 
   int loop_rate_;
 };
 
-} // end namespace mtracker
+}
 
-#endif // AUTOMATIC_CONTROLLER_H
+#endif // MTRACKER_H

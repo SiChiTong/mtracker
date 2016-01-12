@@ -37,102 +37,80 @@
 
 using namespace mtracker;
 
-//  AutoController() : nh_(""), nh_params_("~"), autocontroller_switched_on_(false)
-//  {
-//    controls_pub_ = nh_.advertise<geometry_msgs::Twist>("controls", 10);
-//    pose_sub_ = nh_.subscribe("pose", 10, &AutoController::poseCallback, this);
-//    velocity_sub_ = nh_.subscribe("velocity", 10, &AutoController::velocityCallback, this);
-//    ref_pose_sub_ = nh_.subscribe("reference_pose", 10, &AutoController::refPoseCallback, this);
-//    ref_velocity_sub_ = nh_.subscribe("reference_velocity", 10, &AutoController::refVelocityCallback, this);
-//    trigger_srv_ = nh_.advertiseService("autocontroller_trigger", &AutoController::triggerService, this);
-//    params_tim_ = nh_.createTimer(ros::Duration(0.25), &AutoController::updateParameters, this, false, false);
+AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
+  initialize();
 
-//    updateParameters(ros::TimerEvent());
+  ROS_INFO("Automatic controller start");
 
-//    params_tim_.start();
-//    ROS_INFO("MTracker automatic controller start");
-//  ros::Rate rate(ac.getLoopRate());
-//  while (ros::ok())
-//  {
-//    ros::spinOnce();
+  ros::Rate rate(loop_rate_);
 
-//    if (ac.isSwitchedOn())
-//    {
-//      ac.computeControls();
-//      ac.publishControls();
-//    }
+  while (nh_.ok()) {
+    ros::spinOnce();
 
-//    rate.sleep();
-//  }
+    computeControls();
+    controls_pub_.publish(controls_);
 
-//  }
+    rate.sleep();
+  }
+}
 
-//  ~AutoController() {}
+void AutomaticController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
+  pose_ = *pose_msg;
+}
 
-//  void computeControls()
-//  {
+void AutomaticController::velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg) {
+  velocity_ = *velocity_msg;
+}
 
-//    /*
-//     * HERE PUT THE CODE
-//     */
+void AutomaticController::refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg) {
+  ref_pose_ = *ref_pose_msg;
+}
 
-//    controls_.linear.x = 0.0;
-//    controls_.angular.z = 0.0;
-//  }
+void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg) {
+  ref_velocity_ = *ref_velocity_msg;
+}
 
-//  void publishControls() { controls_pub_.publish(controls_); }
-//  bool isSwitchedOn() const { return autocontroller_switched_on_; }
-//  int getLoopRate() const { return loop_rate_; }
 
-//private:
-//  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg)
-//  { pose_ = *pose_msg; }
+void AutomaticController::initialize() {
+  if (!nh_.getParam("loop_rate", loop_rate_))
+    loop_rate_ = 100;
 
-//  void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg)
-//  { velocity_ = *velocity_msg; }
+  std::string pose_topic;
+  if (!nh_.getParam("pose_topic", pose_topic))
+    pose_topic = "pose";
 
-//  void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg)
-//  { ref_pose_ = *ref_pose_msg; }
+  std::string velocity_topic;
+  if (!nh_.getParam("velocity_topic", velocity_topic))
+    velocity_topic = "velocity";
 
-//  void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg)
-//  { ref_velocity_ = *ref_velocity_msg; }
+  std::string reference_pose_topic;
+  if (!nh_.getParam("reference_pose_topic", reference_pose_topic))
+    reference_pose_topic = "reference_pose";
 
-//  bool triggerService(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
-//  {
-//    autocontroller_switched_on_ = !autocontroller_switched_on_;
-//    return true;
-//  }
+  std::string reference_velocity_topic;
+  if (!nh_.getParam("reference_velocity_topic", reference_velocity_topic))
+    reference_velocity_topic = "reference_velocity";
 
-//  void updateParameters(const ros::TimerEvent& e)
-//  {
-//    if (!nh_.getParam("loop_rate", loop_rate_))
-//    {
-//      loop_rate_ = 100;
-//      nh_.setParam("loop_rate", loop_rate_);
-//    }
-//  }
+  std::string controls_topic;
+  if (!nh_.getParam("controls_topic", controls_topic))
+    controls_topic = "controls";
 
-//  int loop_rate_;
-//  bool autocontroller_switched_on_;
+  pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &AutomaticController::poseCallback, this);
+  velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(velocity_topic, 10, &AutomaticController::velocityCallback, this);
+  ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic, 10, &AutomaticController::refPoseCallback, this);
+  ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(reference_velocity_topic, 10, &AutomaticController::refVelocityCallback, this);
+  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
+}
 
-//  geometry_msgs::Pose2D pose_, ref_pose_;
-//  geometry_msgs::Twist velocity_, ref_velocity_;
-//  geometry_msgs::Twist controls_;
+void AutomaticController::computeControls() {
 
-//  ros::NodeHandle nh_;
-//  ros::NodeHandle nh_params_;
+  /*
+   * HERE PUT THE CODE
+   */
 
-//  ros::Publisher controls_pub_;
-//  ros::Subscriber pose_sub_;
-//  ros::Subscriber velocity_sub_;
-//  ros::Subscriber ref_pose_sub_;
-//  ros::Subscriber ref_velocity_sub_;
-//  ros::ServiceServer trigger_srv_;
-//  ros::Timer params_tim_;
-//};
-
-//} // end namespace mtracker
-
+  controls_.linear.x = 0.0;
+  controls_.angular.z = 0.0;
+}
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "automatic_controller");

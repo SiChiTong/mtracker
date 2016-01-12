@@ -1,12 +1,48 @@
-﻿#ifndef SERIAL_H
+﻿/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2015, Poznan University of Technology
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Author: Mateusz Przybyla
+ */
+
+#ifndef SERIAL_H
 #define SERIAL_H
 
-/* !ALL UNITS ARE IN SI! */
+namespace mtracker
+{
 
-#include "ros/ros.h"
-#include "geometry_msgs/Pose2D.h"
-#include "geometry_msgs/Twist.h"
-#include "rs232.h"
+#include <ros/ros.h>
+#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/Twist.h>
+#include <boost/asio.hpp>
 #include <cstdint>
 
 #define FRAME_HEADER       0xAA
@@ -39,37 +75,32 @@ struct Frame {
   uint16_t crc;
 };
 
+
 class Serial {
-private:
-  int   port_num;
-  bool  port_open;
-  Frame rx_frame;  // Frame read from the robot
-  Frame tx_frame;  // Frame sent to the robot
-
 public:
-  Serial() : port_num(USB0), port_open(false) {}
-  ~Serial() {}
+  Serial(std::string port_name) : io_(), port_(io_), port_name_(port_name) {}
 
-  bool openPort()
-  {
-    if (RS232_OpenComport(port_num, 921600, "8N1") != 0 && port_num <= 21)
-    {
-      this->port_num++;
-      this->openPort();
-    }
-    else
-    {
-      port_open = true;
-      return true;
-    }
-
-    return (port_open = false);
+  void open(unsigned int baud_rate) {
+    port_.open(port_name_);
+    port_.set_option(boost::asio::serial_port_base::baud_rate(baud_rate));
   }
 
-  void closePort()
-  {
-    if (port_open)
-      RS232_CloseComport(port_num);
+  void close() {
+    port_.close();
+  }
+
+  bool isOpen() {
+    return port_.is_open();
+  }
+
+  void writeChar(char* data, size_t size) {
+    port_.write_some(boost::asio::buffer(data, size));
+  }
+
+  char readChar() {
+    char c;
+    port_.read_some(boost::asio::buffer(&c, 1));
+    return c;
   }
 
   void writeFrame()
@@ -101,15 +132,13 @@ public:
     return false;
   }
 
-  void setPose(float x, float y, float theta)
-  {
+  void setPose(float x, float y, float theta) {
     tx_frame.x = x;
     tx_frame.y = y;
     tx_frame.theta = theta;
   }
 
-  geometry_msgs::Pose2D getPose()
-  {
+  geometry_msgs::Pose2D getPose() {
     geometry_msgs::Pose2D pose;
 
     pose.x = rx_frame.x;
@@ -119,14 +148,12 @@ public:
     return pose;
   }
 
-  void setVelocities(float w_l, float w_r)
-  {
+  void setVelocities(float w_l, float w_r) {
     tx_frame.w_l =  (int16_t) (w_l * 2048.0f);
     tx_frame.w_r = -(int16_t) (w_r * 2048.0f);
   }
 
-  geometry_msgs::Twist getVelocities()
-  {
+  geometry_msgs::Twist getVelocities() {
     geometry_msgs::Twist velocity;
 
     velocity.angular.x = rx_frame.w_l / 2048.0f;
@@ -135,8 +162,7 @@ public:
     return velocity;
   }
 
-  void setMode(uint16_t mode)
-  {
+  void setMode(uint16_t mode) {
     tx_frame.mode = mode;
   }
 
@@ -196,6 +222,17 @@ private:
 
     return crc_word;
   }
+
+  boost::asio::io_service io_;
+  boost::asio::serial_port port_;
+  std::string port_name_;
+
+  int   port_num;
+  Frame rx_frame;  // Frame read from the robot
+  Frame tx_frame;  // Frame sent to the robot
+
 };
 
-#endif
+} // namespace mtracker
+
+#endif // SERIAL_H
