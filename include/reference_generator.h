@@ -59,7 +59,6 @@ private:
   void update(double dt);
   void publish();
 
-private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 

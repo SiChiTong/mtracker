@@ -46,7 +46,7 @@ ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), time_(0.0) {
   ros::Time time_stamp = ros::Time::now();
 
   while (nh_.ok()) {
-    //ros::spinOnce();
+    ros::spinOnce();
 
     double dt = (ros::Time::now() - time_stamp).toSec();
     time_stamp = ros::Time::now();
@@ -88,13 +88,13 @@ void ReferenceGenerator::initialize() {
 
   switch (trajectory_type) {
     case 0:
-      trajectory_ = new Trajectory();
+      trajectory_ = new Trajectory(2.0, -1.0, -M_PI_4);
       break;
     case 1:
-      trajectory_ = new LinearTrajectory();
+      trajectory_ = new LinearTrajectory(0.1, M_PI_4);
       break;
     case 2:
-      trajectory_ = new HarmonicTrajectory();
+      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1);
       break;
     case 3:
       trajectory_ = new LemniscateTrajectory();

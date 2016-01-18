@@ -53,7 +53,8 @@ namespace mtracker
 class MTracker
 {
 public:
-  MTracker();
+   MTracker();
+  ~MTracker();
 
 private:
   const double ROBOT_BASE;
@@ -63,11 +64,6 @@ private:
 
   void initialize();
   void transferData();
-
-  void switchMotors(bool motors_on);
-  void setVelocities();
-  void stopWheels();
-
   void publishTransform();
 
   ros::NodeHandle nh_;
@@ -90,6 +86,6 @@ private:
   int loop_rate_;
 };
 
-}
+} // namespace mtracker
 
 #endif // MTRACKER_H

@@ -75,6 +75,6 @@ private:
   int loop_rate_;
 };
 
-} // end namespace mtracker
+} // namespace mtracker
 
 #endif // AUTOMATIC_CONTROLLER_H

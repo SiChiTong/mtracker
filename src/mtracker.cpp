@@ -37,14 +37,17 @@
 
 using namespace mtracker;
 
-MTracker::MTracker() : nh_(""), nh_local_("~"), com_(new Serial("/dev/ttyUSB0")), ROBOT_BASE(0.145f), WHEEL_RADIUS(0.025f) {
+MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145f), WHEEL_RADIUS(0.025f) {
   initialize();
+
+  com_ = new Serial("/dev/ttyUSB0");
   com_->open(921600);
 
   if (com_->isOpen()) {
-    switchMotors(true);
-    stopWheels();
-    initializeOdometry(0.0f, 0.0f, 0.0f);
+    com_->setMode(MODE_SET_ODOMETRY | MODE_MOTORS_ON);
+    com_->setPose(0.0, 0.0, 0.0);
+    com_->setVelocities(0.0, 0.0);
+    com_->writeFrame();
 
     ROS_INFO("MTracker start");
   }
@@ -68,8 +71,10 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), com_(new Serial("/dev/ttyUSB0"))
 }
 
 MTracker::~MTracker() {
-  stopWheels();
-  switchMotors(false);
+  com_->setVelocities(0.0, 0.0);
+  com_->setMode(MODE_MOTORS_OFF);
+  com_->writeFrame();
+
   delete com_;
 }
 
@@ -96,10 +101,6 @@ void MTracker::initialize() {
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &MTracker::controlsCallback, this);
   odom_pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
   odom_velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
-
-  com_->setPose(x, y, theta);
-  com_->setMode(MODE_SET_ODOMETRY);
-  com_->writeFrame();
 }
 
 void MTracker::transferData() {
@@ -107,13 +108,16 @@ void MTracker::transferData() {
   double w_r = (controls_.linear.x + ROBOT_BASE * controls_.angular.z / 2.0) / WHEEL_RADIUS;
 
   com_->setVelocities(w_l, w_r);
-  com_->setMode(MODE_MOTORS_ON);
-
   com_->writeFrame();
   com_->readFrame();
 
   odom_pose_ = com_->getPose();
-  odom_velocity_ = com_->getVelocities();
+
+  w_l = com_->getVelocities().angular.x;
+  w_r = com_->getVelocities().angular.y;
+
+  odom_velocity_.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
+  odom_velocity_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
 }
 
 void MTracker::publishTransform() {
@@ -121,7 +125,6 @@ void MTracker::publishTransform() {
   pose_tf_.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, odom_pose_.theta));
   pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "robot"));
 }
-
 
 //  void publishPath() {
 //    geometry_msgs::PointStamped p;
@@ -131,34 +134,6 @@ void MTracker::publishTransform() {
 //    p.point.y = pose_.y;
 //    path_pub_.publish(p);
 //  }
-
-
-void MTracker::switchMotors(bool motors_on) {
-  if (motors_on)
-    com_->setMode(MODE_MOTORS_ON);
-  else
-    com_->setMode(MODE_MOTORS_OFF);
-
-  com_->writeFrame();
-}
-
-//  geometry_msgs::Pose2D getRobotPose() {
-//    return com_->getPose();
-//  }
-
-
-//  geometry_msgs::Twist getRobotVelocity() {
-//    geometry_msgs::Twist velocity;
-
-//    float w_l = com_->getVelocities().angular.x;
-//    float w_r = com_->getVelocities().angular.y;
-
-//    velocity.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
-//    velocity.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
-
-//    return velocity;
-//  }
-
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "mtracker");

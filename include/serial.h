@@ -36,9 +36,6 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-namespace mtracker
-{
-
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
@@ -57,28 +54,13 @@ namespace mtracker
 #define MODE_MOTORS_ON     0x03
 #define MODE_SET_ODOMETRY  0x04
 
-#pragma pack(1) 
-struct Frame {
-  Frame() : header(FRAME_HEADER), num_data_bytes(22), group_number(FRAME_GROUP_NUMBER), command(CMD_SET_WHEELS_AND_ODOM), robot_number(FRAME_ROBOT_NUMBER) {}
-
-  uint8_t header;
-  uint8_t num_data_bytes;
-  uint8_t group_number;
-  uint8_t command;
-  uint16_t robot_number;
-  uint16_t mode;
-  int16_t w_l;    // Left wheel angular velocity
-  int16_t w_r;
-  float x;        // X coordinate
-  float y;
-  float theta;    // Orientation
-  uint16_t crc;
-};
-
+namespace mtracker
+{
 
 class Serial {
 public:
   Serial(std::string port_name) : io_(), port_(io_), port_name_(port_name) {}
+  ~Serial() { if (isOpen()) close();}
 
   void open(unsigned int baud_rate) {
     port_.open(port_name_);
@@ -112,7 +94,13 @@ public:
   }
 
   void writeFrame() {
-    prepareFrame();
+    // Omit header byte and include num_data_bytes byte for crc
+    // The crc has different endianess (sic!)
+    uint16_t crc = CRC16(((uint8_t*)&tx_frame) + 1, (int)(tx_frame.num_data_bytes + 1));
+    uint8_t crc1 = crc >> 8;
+    uint8_t crc2 = 0xFF & crc;
+
+    tx_frame.crc = crc1 + crc2 * 256;
 
     write((char*)&tx_frame, sizeof(Frame));
   }
@@ -135,7 +123,11 @@ public:
     return false;
   }
 
-  void initializeOdometry(float x, float y, float theta) {
+  void setMode(uint16_t mode) {
+    tx_frame.mode = mode;
+  }
+
+  void setPose(float x, float y, float theta) {
     tx_frame.x = x;
     tx_frame.y = y;
     tx_frame.theta = theta;
@@ -165,20 +157,25 @@ public:
     return velocity;
   }
 
-  void setMode(uint16_t mode) {
-    tx_frame.mode = mode;
-  }
+private:
+  #pragma pack(1)
+  struct Frame {
+    Frame() : header(FRAME_HEADER), num_data_bytes(22), group_number(FRAME_GROUP_NUMBER),
+      command(CMD_SET_WHEELS_AND_ODOM), robot_number(FRAME_ROBOT_NUMBER) {}
 
-  void prepareFrame() {
-    // Omit header byte and include num_data_bytes byte for crc
-    // The crc has different endianess (sic!)
-    uint16_t crc = CRC16(((uint8_t*)&tx_frame) + 1, (int)(tx_frame.num_data_bytes + 1));
-    uint8_t crc1 = crc >> 8;
-    uint8_t crc2 = 0xFF & crc;
-
-    tx_frame.crc = crc1 + crc2 * 256;
-   }
-
+    uint8_t header;
+    uint8_t num_data_bytes;
+    uint8_t group_number;
+    uint8_t command;
+    uint16_t robot_number;
+    uint16_t mode;
+    int16_t w_l;    // Left wheel angular velocity
+    int16_t w_r;
+    float x;        // X coordinate
+    float y;
+    float theta;    // Orientation
+    uint16_t crc;
+  };
 
   uint16_t CRC16(const uint8_t *data, int len) {
     static const uint16_t crc_table[] = {
@@ -223,7 +220,6 @@ public:
 
     return crc_word;
   }
-
 
   boost::asio::io_service io_;
   boost::asio::serial_port port_;

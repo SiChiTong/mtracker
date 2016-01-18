@@ -33,15 +33,11 @@
  * Author: Mateusz Przybyla
  */
 
-#include <ros/ros.h>
-#include <sensor_msgs/Joy.h>
-#include <geometry_msgs/Twist.h>
-
 #include "../include/manual_controller.h"
 
 using namespace mtracker;
 
-AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
+ManualController::ManualController() : nh_(""), nh_local_("~") {
   initialize();
 
   ROS_INFO("MTracker manual controller start");
@@ -49,19 +45,19 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
   ros::spin();
 }
 
-void AutomaticController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
+void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
   controls_.linear.x = v_gain_ * joy_msg->axes[1];
   controls_.angular.z = w_gain_ * joy_msg->axes[0];
   controls_pub_.publish(controls_);
 }
 
-void AutomaticController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
+void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
   controls_.linear.x = v_gain_ * keys_msg->linear.x;
   controls_.angular.z = w_gain_ * keys_msg->angular.z;
   controls_pub_.publish(controls_);
 }
 
-void AutomaticController::initialize() {
+void ManualController::initialize() {
   std::string controls_topic;
   if (!nh_.getParam("controls_topic", controls_topic))
     controls_topic = "controls";
@@ -80,14 +76,14 @@ void AutomaticController::initialize() {
   if (!nh_local_.getParam("angular_gain", w_gain_))
     w_gain_ = 0.2;
 
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &AutomaticController::joyCallback, this);
-  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &AutomaticController::keysCallback, this);
+  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &ManualController::joyCallback, this);
+  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
 }
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "manual_controller");
-  AutomaticController mc;
+  ManualController mc;
   return 0;
 }
 

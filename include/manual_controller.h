@@ -43,10 +43,10 @@
 namespace mtracker
 {
 
-class AutomaticController
+class ManualController
 {
 public:
-  AutomaticController();
+  ManualController();
 
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
@@ -66,6 +66,6 @@ private:
   double w_gain_;  // Angular velocity gain
 };
 
-} // end namespace mtracker
+} // namespace mtracker
 
 #endif // MANUAL_CONTROLLER_H
