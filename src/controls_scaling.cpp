@@ -33,57 +33,57 @@
  * Author: Mateusz Przybyla
  */
 
-#include "../include/manual_controller.h"
+#include "../include/controls_scaling.h"
 
 using namespace mtracker;
 
-ManualController::ManualController() : nh_(""), nh_local_("~") {
+ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025) {
   initialize();
 
-  ROS_INFO("MTracker manual controller [OK]");
+  ROS_INFO("MTracker controls scaling [OK]");
 
   ros::spin();
 }
 
-void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
-  controls_.linear.x = v_gain_ * joy_msg->axes[1];
-  controls_.angular.z = w_gain_ * joy_msg->axes[0];
+void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  double w_l = (controls_msg->linear.x - ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
+  double w_r = (controls_msg->linear.x + ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
+
+  double s = 1.0; // Scaling factor
+
+  if (abs(w_l) >= abs(w_r) && abs(w_l) > w_max_)
+    s = w_max_ / abs(w_l);
+  else if (abs(w_l) <= abs(w_r) && abs(w_r) > w_max_)
+    s = w_max_ / abs(w_r);
+
+  w_l *= s;
+  w_r *= s;
+
+  controls_.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
+  controls_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
+
   controls_pub_.publish(controls_);
 }
 
-void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
-  controls_.linear.x = v_gain_ * keys_msg->linear.x;
-  controls_.angular.z = w_gain_ * keys_msg->angular.z;
-  controls_pub_.publish(controls_);
-}
-
-void ManualController::initialize() {
+void ControlsScaling::initialize() {
   std::string controls_topic;
   if (!nh_.getParam("controls_topic", controls_topic))
     controls_topic = "controls";
 
-  std::string joy_topic;
-  if (!nh_.getParam("joy_topic", joy_topic))
-    joy_topic = "joy";
+  std::string scaled_controls_topic;
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
+    scaled_controls_topic = "scaled_controls";
 
-  std::string keys_topic;
-  if (!nh_.getParam("keys_topic", keys_topic))
-    keys_topic = "keys";
+  if (!nh_local_.getParam("max_wheel_rate", w_max_))
+    w_max_ = 6.0;
 
-  if (!nh_local_.getParam("linear_gain", v_gain_))
-    v_gain_ = 0.4;
-
-  if (!nh_local_.getParam("angular_gain", w_gain_))
-    w_gain_ = 1.5;
-
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &ManualController::joyCallback, this);
-  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
+  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
+  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
 }
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "manual_controller");
-  ManualController mc;
+  ros::init(argc, argv, "controls_scaling");
+  ControlsScaling cs;
   return 0;
 }
 

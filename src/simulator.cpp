@@ -40,7 +40,7 @@ using namespace mtracker;
 Simulator::Simulator() : nh_(""), nh_local_("~") {
   initialize();
 
-  ROS_INFO("MTracker simulator start");
+  ROS_INFO("MTracker simulator [OK]");
 
   ros::Rate rate(loop_rate_);
 

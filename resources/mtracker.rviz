@@ -4,8 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded: ~
-      Splitter Ratio: 0.5
-    Tree Height: 164
+      Splitter Ratio: 0.624535
+    Tree Height: 931
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -25,15 +25,11 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: ""
-  - Class: Control Panel
-    Name: Control Panel
-  - Class: Debug Panel
-    Name: Debug Panel
 Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 0.1
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -47,13 +43,33 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 30
-      Reference Frame: <Fixed Frame>
+      Plane Cell Count: 40
+      Reference Frame: world
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 9999
+      Frames:
+        All Enabled: true
+        virtual_robot:
+          Value: true
+        world:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          virtual_robot:
+            {}
+      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -82,31 +98,27 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 21.7885
+      Scale: 238.958
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 0
-      Y: 0
+      X: -0.0209871
+      Y: 0.0329527
     Saved: ~
 Window Geometry:
-  Control Panel:
-    collapsed: false
-  Debug Panel:
-    collapsed: false
   Displays:
     collapsed: false
-  Height: 744
+  Height: 1026
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 
-    Selection:
+  QMainWindow State: 000000ff00000000fd00000002000000000000010f000003e4fc0200000006fb000000100044006900730070006c0061007900730100000000000003e4000000dd00fffffffb0000001200530065006c0065006300740069006f006e00000002a7000001210000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007300000002ef000000d90000006400fffffffb0000000800540069006d006500000002950000003b0000003b00fffffffb0000001a0043006f006e00740072006f006c002000500061006e0065006c00000002c40000007f0000000000000000fb0000001600440065006200750067002000500061006e0065006c0000000333000000950000000000000000000000020000064f00000122fc0100000001fb0000000a00560069006500770073020000004100000291000005370000012200000422000003e400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  Selection:
     collapsed: false
   Time:
     collapsed: false
   Tool Properties:
     collapsed: false
   Views:
-    collapsed: true
-  Width: 1615
+    collapsed: false
+  Width: 1335
   X: 65
   Y: 24

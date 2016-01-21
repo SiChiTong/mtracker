@@ -33,57 +33,38 @@
  * Author: Mateusz Przybyla
  */
 
-#include "../include/manual_controller.h"
+#ifndef CONTROLS_SCALING_H
+#define CONTROLS_SCALING_H
 
-using namespace mtracker;
+#include <ros/ros.h>
+#include <geometry_msgs/Twist.h>
 
-ManualController::ManualController() : nh_(""), nh_local_("~") {
-  initialize();
+namespace mtracker
+{
 
-  ROS_INFO("MTracker manual controller [OK]");
+class ControlsScaling
+{
+public:
+  ControlsScaling();
 
-  ros::spin();
-}
+private:
+  const double ROBOT_BASE;
+  const double WHEEL_RADIUS;
 
-void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
-  controls_.linear.x = v_gain_ * joy_msg->axes[1];
-  controls_.angular.z = w_gain_ * joy_msg->axes[0];
-  controls_pub_.publish(controls_);
-}
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  void initialize();
 
-void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
-  controls_.linear.x = v_gain_ * keys_msg->linear.x;
-  controls_.angular.z = w_gain_ * keys_msg->angular.z;
-  controls_pub_.publish(controls_);
-}
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_local_;
 
-void ManualController::initialize() {
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  ros::Subscriber controls_sub_;
+  ros::Publisher controls_pub_;
 
-  std::string joy_topic;
-  if (!nh_.getParam("joy_topic", joy_topic))
-    joy_topic = "joy";
+  geometry_msgs::Twist controls_;
 
-  std::string keys_topic;
-  if (!nh_.getParam("keys_topic", keys_topic))
-    keys_topic = "keys";
+  double w_max_; // Maximal wheels angular velocity
+};
 
-  if (!nh_local_.getParam("linear_gain", v_gain_))
-    v_gain_ = 0.4;
+} // namespace mtracker
 
-  if (!nh_local_.getParam("angular_gain", w_gain_))
-    w_gain_ = 1.5;
-
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &ManualController::joyCallback, this);
-  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-}
-
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "manual_controller");
-  ManualController mc;
-  return 0;
-}
-
+#endif // CONTROLS_SCALING_H

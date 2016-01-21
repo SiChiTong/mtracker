@@ -40,7 +40,7 @@ using namespace mtracker;
 AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
   initialize();
 
-  ROS_INFO("Automatic controller start");
+  ROS_INFO("Automatic controller [OK]");
 
   ros::Rate rate(loop_rate_);
 

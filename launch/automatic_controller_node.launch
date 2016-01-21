@@ -1,0 +1,13 @@
+<!-- MTracker automatic controller node launch file. -->
+<launch>
+  <param name="loop_rate" value="100"/>
+  <param name="controls_topic" type="string" value="controls"/>
+  <param name="pose_topic" type="string" value="pose"/>
+  <param name="velocity_topic" type="string" value="velocity"/>
+  <param name="reference_pose_topic" type="string" value="reference_pose"/>
+  <param name="reference_velocity_topic" type="string" value="reference_velocity"/>
+
+  <node name="manual_controller" pkg="mtracker" type="manual_controller" respawn="false" required="true" output="screen">
+    <!-- Here put some parameters... -->
+  </node>
+</launch>

@@ -1,6 +1,6 @@
 <!-- MTracker reference generator node launch file. -->
 <launch>
-  <param name="loop_rate" value="0.01"/>
+  <param name="loop_rate" value="100"/>
   <param name="reference_pose_topic" type="string" value="reference_pose"/>
   <param name="reference_velocity_topic" type="string" value="reference_velocity"/>
 

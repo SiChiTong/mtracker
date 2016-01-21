@@ -1,0 +1,10 @@
+<!-- MTracker node launch file. -->
+<launch>
+  <param name="controls_topic" type="string" value="controls"/>
+  <param name="odom_pose_topic" type="string" value="odom_pose"/>
+  <param name="odom_velocity_topic" type="string" value="odom_velocity"/>
+
+  <node name="manual_controller" pkg="mtracker" type="manual_controller" respawn="false" required="true" output="screen">
+    <!-- Here put some parameters... -->
+  </node>
+</launch>

@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145f), WHEEL_RADIUS(0.025f) {
+MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025) {
   initialize();
 
   com_ = new Serial("/dev/ttyUSB0");
@@ -49,7 +49,7 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145f), WHEEL_RADIUS
     com_->setVelocities(0.0, 0.0);
     com_->writeFrame();
 
-    ROS_INFO("MTracker start");
+    ROS_INFO("MTracker [OK]");
   }
   else {
     ROS_INFO("Could not open COM port.");
