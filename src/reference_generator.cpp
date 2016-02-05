@@ -83,8 +83,8 @@ void ReferenceGenerator::initialize() {
   if (!nh_local_.getParam("trajectory_paused", paused_))
     paused_ = false;
 
-  ref_pose_pub_ = nh_.advertise<geometry_msgs::Vector3>(reference_pose_topic, 10);
-  ref_velocity_pub_ = nh_.advertise<geometry_msgs::Vector3>(reference_velocity_topic, 10);
+  ref_pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
+  ref_velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
 
   switch (trajectory_type) {
     case 0:
@@ -132,7 +132,7 @@ void ReferenceGenerator::publish() {
   ref_velocity_pub_.publish(ref_velocity_);
 
   tf_.setOrigin(tf::Vector3(ref_pose_.x, ref_pose_.y, 0.0));
-  tf_.setRotation(tf::createQuaternionFromYaw(ref_pose_.z));
+  tf_.setRotation(tf::createQuaternionFromYaw(ref_pose_.theta));
   tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), "world", "reference"));
 }
 

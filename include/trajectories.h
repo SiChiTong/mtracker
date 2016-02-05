@@ -37,7 +37,8 @@
 #define TRAJECTORIES_H
 
 #include <cmath>
-#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/Twist.h>
 
 namespace mtracker
 {
@@ -48,20 +49,20 @@ public:
   Trajectory() : x_0_(0.0), y_0_(0.0), phi_0_(0.0) {}
   Trajectory(double x, double y, double phi) : x_0_(x), y_0_(y), phi_0_(phi) {}
 
-  virtual geometry_msgs::Vector3 calculatePose(double t) {
-    geometry_msgs::Vector3 pose;
+  virtual geometry_msgs::Pose2D calculatePose(double t) {
+    geometry_msgs::Pose2D pose;
     pose.x = x_0_;
     pose.y = y_0_;
-    pose.z = phi_0_;
+    pose.theta = phi_0_;
 
     return pose;
   }
 
-  virtual geometry_msgs::Vector3 calculateVelocity(double t) {
-    geometry_msgs::Vector3 velocity;
-    velocity.x = 0.0;
-    velocity.y = 0.0;
-    velocity.z = 0.0;
+  virtual geometry_msgs::Twist calculateVelocity(double t) {
+    geometry_msgs::Twist velocity;
+    velocity.linear.x = 0.0;
+    velocity.linear.y = 0.0;
+    velocity.angular.z = 0.0;
 
     return velocity;
   }
@@ -86,20 +87,20 @@ public:
   LinearTrajectory(double v, double phi) : v_(v), phi_(phi) {}
   LinearTrajectory(double x, double y, double v, double phi) : Trajectory(x, y, phi), v_(v), phi_(phi) {}
 
-  virtual geometry_msgs::Vector3 calculatePose(double t) {
-    geometry_msgs::Vector3 pose;
+  virtual geometry_msgs::Pose2D calculatePose(double t) {
+    geometry_msgs::Pose2D pose;
     pose.x = x_0_ + v_ * cos(phi_) * t;
     pose.y = y_0_ + v_ * sin(phi_) * t;
-    pose.z = phi_;
+    pose.theta = phi_;
 
     return pose;
   }
 
-  virtual geometry_msgs::Vector3 calculateVelocity(double t) {
-    geometry_msgs::Vector3 velocity;
-    velocity.x = v_ * cos(phi_);
-    velocity.y = v_ * sin(phi_);
-    velocity.z = 0.0;
+  virtual geometry_msgs::Twist calculateVelocity(double t) {
+    geometry_msgs::Twist velocity;
+    velocity.linear.x = v_ * cos(phi_);
+    velocity.linear.y = v_ * sin(phi_);
+    velocity.angular.z = 0.0;
 
     return velocity;
   }
@@ -121,22 +122,22 @@ public:
     Trajectory(x, y, M_PI_2), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
     { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
 
-  virtual geometry_msgs::Vector3 calculatePose(double t) {
-    geometry_msgs::Vector3 pose;
+  virtual geometry_msgs::Pose2D calculatePose(double t) {
+    geometry_msgs::Pose2D pose;
     pose.x = x_0_ + r_x_ * cos(n_x_ * w_ * t);
     pose.y = y_0_ + r_y_ * sin(n_y_ * w_ * t);
-    pose.z = atan2(r_y_ * n_y_ * w_ * cos(n_y_ * w_ * t), -r_x_ * n_x_ * w_ * sin(n_x_ * w_ * t));
+    pose.theta = atan2(r_y_ * n_y_ * w_ * cos(n_y_ * w_ * t), -r_x_ * n_x_ * w_ * sin(n_x_ * w_ * t));
 
     return pose;
   }
 
-  virtual geometry_msgs::Vector3 calculateVelocity(double t) {
-    geometry_msgs::Vector3 velocity;
-    velocity.x = -r_x_ * n_x_ * w_ * sin(n_x_ * w_ * t);
-    velocity.y =  r_y_ * n_y_ * w_ * cos(n_y_ * w_ * t);
-    velocity.z = (-r_y_ * pow(n_y_, 2.0) * pow(w_, 2.0) * sin(n_y_ * w_ * t) * velocity.x -
-                  -r_x_ * pow(n_x_, 2.0) * pow(w_, 2.0) * cos(n_x_ * w_ * t) * velocity.y) /
-                 (pow(velocity.x, 2.0) + pow(velocity.y, 2.0));
+  virtual geometry_msgs::Twist calculateVelocity(double t) {
+    geometry_msgs::Twist velocity;
+    velocity.linear.x = -r_x_ * n_x_ * w_ * sin(n_x_ * w_ * t);
+    velocity.linear.y =  r_y_ * n_y_ * w_ * cos(n_y_ * w_ * t);
+    velocity.angular.z = (-r_y_ * pow(n_y_, 2.0) * pow(w_, 2.0) * sin(n_y_ * w_ * t) * velocity.linear.x -
+                  -r_x_ * pow(n_x_, 2.0) * pow(w_, 2.0) * cos(n_x_ * w_ * t) * velocity.linear.y) /
+                 (pow(velocity.linear.x, 2.0) + pow(velocity.linear.y, 2.0));
 
     return velocity;
   }
@@ -157,20 +158,20 @@ public:
   LemniscateTrajectory(double x, double y, double T, double a, double b) : Trajectory(x, y, M_PI_2), a_(a), b_(b)
     { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
 
-  virtual geometry_msgs::Vector3 calculatePose(double t) {
-    geometry_msgs::Vector3 pose;
+  virtual geometry_msgs::Pose2D calculatePose(double t) {
+    geometry_msgs::Pose2D pose;
     pose.x = 0.0;
     pose.y = 0.0;
-    pose.z = 0.0;
+    pose.theta = 0.0;
 
     return pose;
   }
 
-  virtual geometry_msgs::Vector3 calculateVelocity(double t) {
-    geometry_msgs::Vector3 velocity;
-    velocity.x = 0.0;
-    velocity.y = 0.0;
-    velocity.z = 0.0;
+  virtual geometry_msgs::Twist calculateVelocity(double t) {
+    geometry_msgs::Twist velocity;
+    velocity.linear.x = 0.0;
+    velocity.linear.y = 0.0;
+    velocity.angular.z = 0.0;
 
     return velocity;
   }

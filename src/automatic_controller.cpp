@@ -103,13 +103,23 @@ void AutomaticController::initialize() {
 }
 
 void AutomaticController::computeControls() {
+  double x = pose_.x;
+  double y = pose_.y;
+  double theta = pose_.theta;
+
+  double x_d = ref_pose_.x;
+  double y_d = ref_pose_.y;
+  double theta_d = ref_pose_.theta;
+
+  double v = 0.0; // Linear velocity
+  double w = 0.0; // Angular velocity
 
   /*
    * HERE PUT THE CODE
    */
 
-  controls_.linear.x = 0.0;
-  controls_.angular.z = 0.0;
+  controls_.linear.x = v;
+  controls_.angular.z = w;
 }
 
 int main(int argc, char** argv) {

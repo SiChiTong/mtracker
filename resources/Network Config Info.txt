@@ -1,0 +1,19 @@
+Network: RoBrex
+Password: 4d3c2ba
+
+PC configuration:
+Hostname: MTrackerUI
+Adress: 192.168.1.140
+Netmask: 255.255.255.0
+Gateway: 198.168.1.0
+
+Robot configuration:
+Hostname: MTracker
+Adress: 192.168.1.130
+Netmask: 255.255.255.0
+Gateway: 198.168.1.0
+Low Level Controller: Connected to /dev/ttyUSB0
+Hokuyo Scanner: Connected to /dev/ttyACM0
+
+ssh mtracker@MTracker (or ssh mtracker@192.168.1.130)
+ssh ksis@MTrackerUI (or ssh mtracker@192.168.1.140)

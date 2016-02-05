@@ -74,8 +74,8 @@ private:
   double time_;
   bool paused_;
 
-  geometry_msgs::Vector3 ref_pose_;
-  geometry_msgs::Vector3 ref_velocity_;
+  geometry_msgs::Pose2D ref_pose_;
+  geometry_msgs::Twist ref_velocity_;
 };
 
 } // namespace mtracker
