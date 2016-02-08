@@ -86,9 +86,9 @@ void MTracker::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  std::string scaled_controls_topic;
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
+    scaled_controls_topic = "scaled_controls";
 
   std::string odom_pose_topic;
   if (!nh_.getParam("odom_pose_topic", odom_pose_topic))
@@ -98,7 +98,7 @@ void MTracker::initialize() {
   if (!nh_.getParam("odom_velocity_topic", odom_velocity_topic))
     odom_velocity_topic = "odom_velocity";
 
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &MTracker::controlsCallback, this);
+  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &MTracker::controlsCallback, this);
   odom_pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
   odom_velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
 }

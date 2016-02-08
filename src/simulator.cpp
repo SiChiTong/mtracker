@@ -68,9 +68,9 @@ void Simulator::initialize() {
   if (loop_rate_ != 0)
     Tp_ = 1.0 / loop_rate_;
 
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  std::string scaled_controls_topic;
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
+    scaled_controls_topic = "scaled_controls";
 
   std::string virtual_pose_topic;
   if (!nh_.getParam("virtual_pose_topic", virtual_pose_topic))
@@ -83,7 +83,7 @@ void Simulator::initialize() {
   if (!nh_local_.getParam("time_constant", Tf_))
     Tf_ = 0.1;
 
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &Simulator::controlsCallback, this);
+  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &Simulator::controlsCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);
 }
