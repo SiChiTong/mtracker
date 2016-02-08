@@ -1,4 +1,4 @@
-<!-- Remote MTracker launch file. -->
+<!-- MTracker with automatic controller -->
 <launch>
   <env name="ROS_MASTER_URI" value="http://MTracker:11311"/>
   <env name="ROSLAUNCH_SSH_UNKNOWN" value="1"/>
