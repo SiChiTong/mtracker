@@ -1,9 +1,10 @@
 #!/bin/sh
 
+export ROS_MASTER_URI=http://MTracker:11311
 export ROS_IP=MTrackerUI
 export ROS_HOSTNAME=MTrackerUI
-export ROS_MASTER_URI=http://MTracker:11311
+export ROSLAUNCH_SSH_UNKNOWN=1
 
-. /opt/ros/hydro/setup.sh
-. /home/$(env USER)/catkin_ws/devel/setup.sh
+. /opt/ros/indigo/setup.sh
+. /home/tysik/workspace/catkin_ws/devel/setup.sh
 exec "$@"

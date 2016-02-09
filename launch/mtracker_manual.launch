@@ -1,15 +1,14 @@
 <!-- MTracker with automatic controller -->
 <launch>
-  <!--
   <env name="ROS_MASTER_URI" value="http://MTracker:11311"/>
   <env name="ROSLAUNCH_SSH_UNKNOWN" value="1"/>
-  -->
 
-  <machine name="MTracker" user="mtracker" address="MTracker" env-loader="$(find mtracker)/scripts/mtracker_env.sh" default="true"/>
-  <machine name="MTrackerUI" user="ksis" address="MTrackerUI" env-loader="$(find mtracker)/scripts/mtracker_ui_env.sh"/>
+  <machine name="MTracker" user="mtracker" address="MTracker" env-loader="/home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh" default="true"/>
+  <machine name="MTrackerUI" user="tysik" address="MTrackerUI" env-loader="/home/tysik/workspace/catkin_ws/src/mtracker/scripts/mtracker_ui_env.sh"/>
 
   <param name="loop_rate" value="100"/>
   <param name="controls_topic" type="string" value="controls"/>
+  <param name="scaled_controls_topic" type="string" value="scaled_controls"/>
   <param name="joy_topic" type="string" value="joy"/>
   <param name="keys_topic" type="string" value="keys"/>
   <param name="odom_pose_topic" type="string" value="odom_pose"/>
@@ -25,6 +24,9 @@
     <!-- Here put some parameters... -->
   </node>
 
+  <node name="controls_scaling" pkg="mtracker" type="controls_scaling" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="max_wheel_rate" value="1.0"/>
+  </node>
 
   <!-- PC Nodes -->
   <node name="joy" pkg="joy" type="joy_node" respawn="false" required="true" output="screen" machine="MTrackerUI">
@@ -39,6 +41,6 @@
   </node>
   -->
 
-  <node name="rviz" pkg="rviz" type="rviz" respawn="false" required="true" output="screen" machine="MTrackerUI" args="-d $(find mtracker)/resources/mtracker.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" required="true" output="screen" machine="MTrackerUI" args="-d /home/tysik/workspace/catkin_ws/src/mtracker/resources/mtracker.rviz"/>
 </launch>
 

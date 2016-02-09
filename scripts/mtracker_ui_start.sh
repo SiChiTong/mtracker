@@ -14,7 +14,7 @@ echo "ROS_IP: " $ROS_IP
 
 echo "Starting roscore on MTracker. Please wait."
 ssh mtracker@MTracker "source /home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_start.sh" &
-sleep 10;
+sleep 5;
 echo "Roscore OK";
 
-roslaunch mtracker mtracker.launch
+roslaunch mtracker mtracker_manual.launch
