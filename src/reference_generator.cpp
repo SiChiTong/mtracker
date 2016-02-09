@@ -78,7 +78,7 @@ void ReferenceGenerator::initialize() {
 
   int trajectory_type;
   if (!nh_local_.getParam("trajectory_type", trajectory_type))
-    trajectory_type = 0;
+    trajectory_type = 2;
 
   if (!nh_local_.getParam("trajectory_paused", paused_))
     paused_ = false;
