@@ -62,9 +62,12 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
     ros::spinOnce();
 
     transferData();
-    odom_pose_pub_.publish(odom_pose_);
-    odom_velocity_pub_.publish(odom_velocity_);
+
+    pose_pub_.publish(pose_);
+    velocity_pub_.publish(velocity_);
+
     publishTransform();
+    publishPoseStamped();
 
     rate.sleep();
   }
@@ -99,8 +102,9 @@ void MTracker::initialize() {
     odom_velocity_topic = "odom_velocity";
 
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &MTracker::controlsCallback, this);
-  odom_pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
-  odom_velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
+  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
+  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
+  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(odom_pose_topic + "_stamped", 10);
 }
 
 void MTracker::transferData() {
@@ -111,29 +115,33 @@ void MTracker::transferData() {
   com_->writeFrame();
   com_->readFrame();
 
-  odom_pose_ = com_->getPose();
+  pose_ = com_->getPose();
 
   w_l = com_->getVelocities().angular.x;
   w_r = com_->getVelocities().angular.y;
 
-  odom_velocity_.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
-  odom_velocity_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
+  velocity_.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
+  velocity_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
 }
 
 void MTracker::publishTransform() {
-  pose_tf_.setOrigin(tf::Vector3(odom_pose_.x, odom_pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, odom_pose_.theta));
-  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "robot"));
+  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
+  pose_tf_.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose_.theta));
+  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "odometry"));
 }
 
-//  void publishPath() {
-//    geometry_msgs::PointStamped p;
-//    p.header.frame_id = "robot";
-//    p.header.stamp = ros::Time::now();
-//    p.point.x = pose_.x;
-//    p.point.y = pose_.y;
-//    path_pub_.publish(p);
-//  }
+void MTracker::publishPoseStamped() {
+  geometry_msgs::PoseStamped pose;
+
+  pose.header.stamp = ros::Time::now();
+  pose.header.frame_id = "odometry";
+
+  pose.pose.position.x = pose_.x;
+  pose.pose.position.y = pose_.y;
+  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+
+  pose_stamped_pub_.publish(pose);
+}
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "mtracker");

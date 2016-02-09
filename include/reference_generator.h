@@ -37,7 +37,9 @@
 #define REFERENCE_GENERATOR_H
 
 #include <ros/ros.h>
-#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 
 #include "../include/trajectories.h"
@@ -62,8 +64,9 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
-  ros::Publisher ref_pose_pub_;
-  ros::Publisher ref_velocity_pub_;
+  ros::Publisher pose_pub_;
+  ros::Publisher velocity_pub_;
+  ros::Publisher pose_stamped_pub_;
 
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;
@@ -74,8 +77,8 @@ private:
   double time_;
   bool paused_;
 
-  geometry_msgs::Pose2D ref_pose_;
-  geometry_msgs::Twist ref_velocity_;
+  geometry_msgs::Pose2D pose_;
+  geometry_msgs::Twist velocity_;
 };
 
 } // namespace mtracker
