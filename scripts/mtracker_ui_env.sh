@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export ROS_IP=MTracker
-export ROS_HOSTNAME=MTracker
+export ROS_IP=MTrackerUI
+export ROS_HOSTNAME=MTrackerUI
 export ROS_MASTER_URI=http://MTracker:11311
 
 . /opt/ros/hydro/setup.sh

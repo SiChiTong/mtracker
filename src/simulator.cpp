@@ -1,71 +1,129 @@
-﻿#include "ros/ros.h"
-#include "geometry_msgs/Pose2D.h"
-#include "geometry_msgs/Twist.h"
-#include "tf/transform_broadcaster.h"
+﻿/*
+ * Software License Agreement (BSD License)
+ *
+ * Copyright (c) 2015, Poznan University of Technology
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
-class Simulator
-{
-public:
-  ros::Subscriber ctrl_sub;
-  ros::Publisher  pose_pub;
+/*
+ * Author: Mateusz Przybyla
+ */
 
-  geometry_msgs::Pose2D pose;
-  geometry_msgs::Twist  controls;
+#include "../include/simulator.h"
 
-  void ctrlCallback(const geometry_msgs::Twist::ConstPtr& controls_msg)
-  {
-    controls.linear.x  = controls_msg->linear.x;
-    controls.angular.z = controls_msg->angular.z;
-  }
+using namespace mtracker;
 
-  void computePose()
-  {
-    pose.x += 0.01 * controls.linear.x * cos(pose.theta);
-    pose.y += 0.01 * controls.linear.x * sin(pose.theta);
-    pose.theta += 0.01 * controls.angular.z;
-  }
+Simulator::Simulator() : nh_(""), nh_local_("~") {
+  initialize();
 
-  void publishPose()
-  {
-    tf::TransformBroadcaster pose_bc;
-    geometry_msgs::TransformStamped pose_tf;
+  ROS_INFO("MTracker simulator [OK]");
 
-    pose_tf.header.stamp = ros::Time::now();
-    pose_tf.header.frame_id = "/base";
-    pose_tf.transform.translation.x = pose.x;
-    pose_tf.transform.translation.y = pose.y;
-    pose_tf.transform.translation.z = 0.0;
-    pose_tf.transform.rotation = tf::createQuaternionMsgFromYaw(pose.theta);
+  ros::Rate rate(loop_rate_);
 
-    pose_bc.sendTransform(pose_tf);
-    pose_pub.publish(pose);
-  }
-};
-
-
-int main(int argc, char **argv)
-{
-  Simulator s;
-
-  ros::init(argc, argv, "mtracker_simulator");
-  ros::NodeHandle n;
-
-  s.pose_pub = n.advertise<geometry_msgs::Pose2D>("/pose", 10);
-  s.ctrl_sub = n.subscribe("/controls", 10, &Simulator::ctrlCallback, &s);
-
-  ROS_INFO("MTracker Simulator");
-
-  ros::Rate rate(100.0);
-
-  while (ros::ok())
-  {
+  while (nh_.ok()) {
     ros::spinOnce();
 
-    s.computePose();
-    s.publishPose();
+    computeVelocity();
+    computePose();
+
+    velocity_pub_.publish(velocity_);
+    pose_pub_.publish(pose_);
+
+    publishTransform();
+    publishPoseStamped();
 
     rate.sleep();
   }
+}
 
+void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  controls_ = *controls_msg;
+}
+
+void Simulator::initialize() {
+  if (!nh_.getParam("loop_rate", loop_rate_))
+    loop_rate_ = 100;
+
+  if (loop_rate_ != 0)
+    Tp_ = 1.0 / loop_rate_;
+
+  std::string scaled_controls_topic;
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
+    scaled_controls_topic = "scaled_controls";
+
+  std::string virtual_pose_topic;
+  if (!nh_.getParam("virtual_pose_topic", virtual_pose_topic))
+    virtual_pose_topic = "virtual_pose";
+
+  std::string virtual_velocity_topic;
+  if (!nh_.getParam("virtual_velocity_topic", virtual_velocity_topic))
+    virtual_velocity_topic = "virtual_velocity";
+
+  if (!nh_local_.getParam("time_constant", Tf_))
+    Tf_ = 0.1;
+
+  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &Simulator::controlsCallback, this);
+  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic, 10);
+  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);
+  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(virtual_pose_topic + "_stamped", 10);
+}
+
+void Simulator::computeVelocity() {
+  velocity_.linear.x  += Tp_ / (Tp_ + Tf_) * (controls_.linear.x - velocity_.linear.x);
+  velocity_.angular.z += Tp_ / (Tp_ + Tf_) * (controls_.angular.z - velocity_.angular.z);
+}
+
+void Simulator::computePose() {
+  pose_.x += Tp_ * velocity_.linear.x * cos(pose_.theta);
+  pose_.y += Tp_ * velocity_.linear.x * sin(pose_.theta);
+  pose_.theta += Tp_ * velocity_.angular.z;
+}
+
+void Simulator::publishTransform() {
+  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
+  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
+  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "virtual_robot"));
+}
+
+void Simulator::publishPoseStamped() {
+  geometry_msgs::PoseStamped pose;
+
+  pose.header.stamp = ros::Time::now();
+  pose.header.frame_id = "virtual_robot";
+
+  pose.pose.position.x = pose_.x;
+  pose.pose.position.y = pose_.y;
+  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+
+  pose_stamped_pub_.publish(pose);
+}
+
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "simulator");
+  Simulator S;
   return 0;
 }

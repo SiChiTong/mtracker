@@ -1,0 +1,29 @@
+<!-- MTracker simulator with automatic controller -->
+<launch>
+  <param name="loop_rate" value="100"/>
+  <param name="controls_topic" type="string" value="controls"/>
+  <param name="scaled_controls_topic" type="string" value="scaled_controls"/>
+  <param name="reference_pose_topic" type="string" value="reference_pose"/>
+  <param name="reference_velocity_topic" type="string" value="reference_velocity"/>
+  <param name="virtual_pose_topic" type="string" value="pose"/>
+  <param name="virtual_velocity_topic" type="string" value="velocity"/>
+
+  <node name="automatic_controller" pkg="mtracker" type="automatic_controller" respawn="false" required="true" output="screen">
+    <!-- -->
+  </node>
+
+  <node name="controls_scaling" pkg="mtracker" type="controls_scaling" respawn="false" required="true" output="screen">
+    <param name="max_wheel_rate" value="6.0"/>
+  </node>
+
+  <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen">
+    <param name="trajectory_type" value="2"/>
+    <param name="trajectory_paused" value="false"/>
+  </node>
+
+  <node name="simulator" pkg="mtracker" type="simulator" respawn="false" required="true" output="screen">
+    <param name="time_constant" value="0.1"/>
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" required="true" output="screen" args="-d $(find mtracker)/resources/mtracker.rviz"/>
+</launch>
