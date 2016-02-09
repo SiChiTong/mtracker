@@ -38,6 +38,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <std_srvs/Empty.h>
 #include <tf/transform_broadcaster.h>
@@ -56,6 +57,7 @@ private:
   void computeVelocity();
   void computePose();
   void publishTransform();
+  void publishPoseStamped();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -63,6 +65,7 @@ private:
   ros::Subscriber controls_sub_;
   ros::Publisher pose_pub_;
   ros::Publisher velocity_pub_;
+  ros::Publisher pose_stamped_pub_;
   ros::ServiceServer trigger_srv_;
 
   tf::TransformBroadcaster pose_bc_;

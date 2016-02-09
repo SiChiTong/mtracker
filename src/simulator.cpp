@@ -49,9 +49,12 @@ Simulator::Simulator() : nh_(""), nh_local_("~") {
 
     computeVelocity();
     computePose();
+
     velocity_pub_.publish(velocity_);
     pose_pub_.publish(pose_);
+
     publishTransform();
+    publishPoseStamped();
 
     rate.sleep();
   }
@@ -86,6 +89,7 @@ void Simulator::initialize() {
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &Simulator::controlsCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);
+  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(virtual_pose_topic + "_stamped", 10);
 }
 
 void Simulator::computeVelocity() {
@@ -101,8 +105,21 @@ void Simulator::computePose() {
 
 void Simulator::publishTransform() {
   pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose_.theta));
+  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
   pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "virtual_robot"));
+}
+
+void Simulator::publishPoseStamped() {
+  geometry_msgs::PoseStamped pose;
+
+  pose.header.stamp = ros::Time::now();
+  pose.header.frame_id = "virtual_robot";
+
+  pose.pose.position.x = pose_.x;
+  pose.pose.position.y = pose_.y;
+  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+
+  pose_stamped_pub_.publish(pose);
 }
 
 int main(int argc, char** argv) {

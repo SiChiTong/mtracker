@@ -83,8 +83,9 @@ void ReferenceGenerator::initialize() {
   if (!nh_local_.getParam("trajectory_paused", paused_))
     paused_ = false;
 
-  ref_pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
-  ref_velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
+  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
+  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
+  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic + "_stamped", 10);
 
   switch (trajectory_type) {
     case 0:
@@ -123,17 +124,28 @@ void ReferenceGenerator::pause() {
 
 void ReferenceGenerator::update(double dt) {
   time_ += dt;
-  ref_pose_ = trajectory_->calculatePose(time_);
-  ref_velocity_ = trajectory_->calculateVelocity(time_);
+  pose_ = trajectory_->calculatePose(time_);
+  velocity_ = trajectory_->calculateVelocity(time_);
 }
 
 void ReferenceGenerator::publish() {
-  ref_pose_pub_.publish(ref_pose_);
-  ref_velocity_pub_.publish(ref_velocity_);
+  pose_pub_.publish(pose_);
+  velocity_pub_.publish(velocity_);
 
-  tf_.setOrigin(tf::Vector3(ref_pose_.x, ref_pose_.y, 0.0));
-  tf_.setRotation(tf::createQuaternionFromYaw(ref_pose_.theta));
+  tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
+  tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
   tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), "world", "reference"));
+
+  geometry_msgs::PoseStamped pose;
+
+  pose.header.stamp = ros::Time::now();
+  pose.header.frame_id = "reference";
+
+  pose.pose.position.x = pose_.x;
+  pose.pose.position.y = pose_.y;
+  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+
+  pose_stamped_pub_.publish(pose);
 }
 
 int main(int argc, char** argv) {

@@ -38,8 +38,8 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/PointStamped.h>
 #include <tf/transform_broadcaster.h>
 #include <std_srvs/Empty.h>
 #include <signal.h>
@@ -65,20 +65,21 @@ private:
   void initialize();
   void transferData();
   void publishTransform();
+  void publishPoseStamped();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
   ros::Subscriber controls_sub_;
-  ros::Publisher odom_pose_pub_;
-  ros::Publisher odom_velocity_pub_;
-  ros::Publisher path_pub_;
+  ros::Publisher pose_pub_;
+  ros::Publisher velocity_pub_;
+  ros::Publisher pose_stamped_pub_;
 
   tf::TransformBroadcaster pose_bc_;
   tf::Transform pose_tf_;
 
-  geometry_msgs::Pose2D odom_pose_;
-  geometry_msgs::Twist odom_velocity_;
+  geometry_msgs::Pose2D pose_;
+  geometry_msgs::Twist velocity_;
   geometry_msgs::Twist controls_;
 
   Serial* com_;
