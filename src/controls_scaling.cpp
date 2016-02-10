@@ -100,6 +100,7 @@ void ControlsScaling::initialize() {
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
   max_wheel_rate_srv_ = nh_.advertiseService("max_wheel_rate_srv", &ControlsScaling::updateMaxWheelRate, this);
+  trigger_srv_ = nh_.advertiseService("controls_scaling_trigger_srv", &ControlsScaling::updateMaxWheelRate, this);
 }
 
 int main(int argc, char** argv) {
