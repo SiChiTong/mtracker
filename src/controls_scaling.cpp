@@ -46,23 +46,43 @@ ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145),
 }
 
 void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
-  double w_l = (controls_msg->linear.x - ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
-  double w_r = (controls_msg->linear.x + ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
+  geometry_msgs::Twist controls;
 
-  double s = 1.0; // Scaling factor
+  if (scaling_active_) {
+    double w_l = (controls_msg->linear.x - ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
+    double w_r = (controls_msg->linear.x + ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
 
-  if (abs(w_l) >= abs(w_r) && abs(w_l) > w_max_)
-    s = w_max_ / abs(w_l);
-  else if (abs(w_l) <= abs(w_r) && abs(w_r) > w_max_)
-    s = w_max_ / abs(w_r);
+    double s = 1.0; // Scaling factor
 
-  w_l *= s;
-  w_r *= s;
+    if (abs(w_l) >= abs(w_r) && abs(w_l) > max_wheel_rate_)
+      s = max_wheel_rate_ / abs(w_l);
+    else if (abs(w_l) <= abs(w_r) && abs(w_r) > max_wheel_rate_)
+      s = max_wheel_rate_ / abs(w_r);
 
-  controls_.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
-  controls_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
+    w_l *= s;
+    w_r *= s;
 
-  controls_pub_.publish(controls_);
+    controls.linear.x  = (w_r + w_l) * WHEEL_RADIUS / 2.0;
+    controls.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
+  }
+  else
+    controls = *controls_msg;
+
+  controls_pub_.publish(controls);
+}
+
+bool ControlsScaling::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  scaling_active_ = req.value;
+  return true;
+}
+
+bool ControlsScaling::updateMaxWheelRate(mtracker::MaxWheelRate::Request &req, mtracker::MaxWheelRate::Response &res) {
+  if (req.value >= 0.0) {
+    max_wheel_rate_ = req.value;
+    return true;
+  }
+  else
+    return false;
 }
 
 void ControlsScaling::initialize() {
@@ -74,14 +94,15 @@ void ControlsScaling::initialize() {
   if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
     scaled_controls_topic = "scaled_controls";
 
-  if (!nh_local_.getParam("max_wheel_rate", w_max_))
-    w_max_ = 6.0;
+  if (!nh_local_.getParam("max_wheel_rate", max_wheel_rate_))
+    max_wheel_rate_ = 6.0;
 
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
+  max_wheel_rate_srv_ = nh_.advertiseService("max_wheel_rate_srv", &ControlsScaling::updateMaxWheelRate, this);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "controls_scaling");
   ControlsScaling cs;
   return 0;

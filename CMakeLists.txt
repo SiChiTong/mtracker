@@ -3,13 +3,16 @@ project(mtracker)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 
-find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs tf joy)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy message_generation)
 #find_package(Boost REQUIRED COMPONENTS xxx)
+
+add_service_files(FILES MaxWheelRate.srv Trigger.srv)
+generate_messages(DEPENDENCIES)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp geometry_msgs tf joy
+  CATKIN_DEPENDS roscpp geometry_msgs tf joy message_runtime
   DEPENDS system_lib)
 
 include_directories(include ${catkin_INCLUDE_DIRS}) #${Boost_INCLUDE_DIRS}
@@ -31,6 +34,8 @@ target_link_libraries(automatic_controller ${catkin_LIBRARIES})
 
 add_executable(controls_scaling src/controls_scaling.cpp include/controls_scaling.h)
 target_link_libraries(controls_scaling ${catkin_LIBRARIES})
+add_dependencies(controls_scaling ${${PROJECT_NAME}_EXPORTED_TARGETS})
+#add_dependencies(controls_scaling mtracker_gencpp)
 
 #add_executable(trajectory_recorder src/trajectory_recorder.cpp include/trajectory_recorder.h)
 #target_link_libraries(trajectory_recorder ${catkin_LIBRARIES} /usr/local/lib/libyaml-cpp.a)
