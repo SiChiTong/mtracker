@@ -19,6 +19,8 @@
   <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen">
     <param name="trajectory_type" value="2"/>
     <param name="trajectory_paused" value="false"/>
+    <param name="parent_frame" type="string" value="world"/>
+    <param name="child_frame" type="string" value="reference"/>
   </node>
 
   <node name="simulator" pkg="mtracker" type="simulator" respawn="false" required="true" output="screen">

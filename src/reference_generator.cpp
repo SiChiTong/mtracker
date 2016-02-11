@@ -83,6 +83,12 @@ void ReferenceGenerator::initialize() {
   if (!nh_local_.getParam("trajectory_paused", paused_))
     paused_ = false;
 
+  if (!nh_local_.getParam("parent_frame", parent_frame_))
+    parent_frame_ = "world";
+
+  if (!nh_local_.getParam("child_frame", child_frame_))
+    child_frame_ = "reference";
+
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic + "_stamped", 10);
@@ -134,12 +140,12 @@ void ReferenceGenerator::publish() {
 
   tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
   tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
-  tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), "world", "reference"));
+  tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), parent_frame_, child_frame_));
 
   geometry_msgs::PoseStamped pose;
 
   pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = "reference";
+  pose.header.frame_id = child_frame_;
 
   pose.pose.position.x = pose_.x;
   pose.pose.position.y = pose_.y;

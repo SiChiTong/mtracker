@@ -60,10 +60,6 @@ Simulator::Simulator() : nh_(""), nh_local_("~") {
   }
 }
 
-void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
-  controls_ = *controls_msg;
-}
-
 void Simulator::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
@@ -86,6 +82,12 @@ void Simulator::initialize() {
   if (!nh_local_.getParam("time_constant", Tf_))
     Tf_ = 0.1;
 
+  if (!nh_local_.getParam("parent_frame", parent_frame_))
+    parent_frame_ = "world";
+
+  if (!nh_local_.getParam("child_frame", child_frame_))
+    child_frame_ = "virtual";
+
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &Simulator::controlsCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);
@@ -106,20 +108,24 @@ void Simulator::computePose() {
 void Simulator::publishTransform() {
   pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
   pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
-  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "virtual_robot"));
+  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), parent_frame_, child_frame_));
 }
 
 void Simulator::publishPoseStamped() {
   geometry_msgs::PoseStamped pose;
 
   pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = "virtual_robot";
+  pose.header.frame_id = child_frame_;
 
   pose.pose.position.x = pose_.x;
   pose.pose.position.y = pose_.y;
   pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
 
   pose_stamped_pub_.publish(pose);
+}
+
+void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  controls_ = *controls_msg;
 }
 
 int main(int argc, char** argv) {

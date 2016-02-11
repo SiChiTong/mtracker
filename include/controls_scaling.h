@@ -53,20 +53,21 @@ private:
   const double ROBOT_BASE;
   const double WHEEL_RADIUS;
 
+  void initialize();
+
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateMaxWheelRate(mtracker::MaxWheelRate::Request &req, mtracker::MaxWheelRate::Response &res);
-  void initialize();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
   ros::Subscriber controls_sub_;
   ros::Publisher controls_pub_;
-  ros::ServiceServer max_wheel_rate_srv_;
   ros::ServiceServer trigger_srv_;
+  ros::ServiceServer max_wheel_rate_srv_;
 
-  bool scaling_active_;
+  bool controls_scaling_active_;
   double max_wheel_rate_;
 };
 

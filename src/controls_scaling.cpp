@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025) {
+ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), controls_scaling_active_(false) {
   initialize();
 
   ROS_INFO("MTracker controls scaling [OK]");
@@ -45,10 +45,28 @@ ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145),
   ros::spin();
 }
 
+void ControlsScaling::initialize() {
+  std::string controls_topic;
+  if (!nh_.getParam("controls_topic", controls_topic))
+    controls_topic = "controls";
+
+  std::string scaled_controls_topic;
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
+    scaled_controls_topic = "scaled_controls";
+
+  if (!nh_local_.getParam("max_wheel_rate", max_wheel_rate_))
+    max_wheel_rate_ = 6.0;
+
+  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
+  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
+  trigger_srv_ = nh_.advertiseService("controls_scaling_trigger_srv", &ControlsScaling::trigger, this);
+  max_wheel_rate_srv_ = nh_.advertiseService("max_wheel_rate_srv", &ControlsScaling::updateMaxWheelRate, this);
+}
+
 void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
   geometry_msgs::Twist controls;
 
-  if (scaling_active_) {
+  if (controls_scaling_active_) {
     double w_l = (controls_msg->linear.x - ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
     double w_r = (controls_msg->linear.x + ROBOT_BASE * controls_msg->angular.z / 2.0) / WHEEL_RADIUS;
 
@@ -72,35 +90,17 @@ void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& con
 }
 
 bool ControlsScaling::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
-  scaling_active_ = req.value;
+  controls_scaling_active_ = req.activate;
   return true;
 }
 
 bool ControlsScaling::updateMaxWheelRate(mtracker::MaxWheelRate::Request &req, mtracker::MaxWheelRate::Response &res) {
-  if (req.value >= 0.0) {
-    max_wheel_rate_ = req.value;
+  if (req.max_wheel_rate >= 0.0) {
+    max_wheel_rate_ = req.max_wheel_rate;
     return true;
   }
   else
     return false;
-}
-
-void ControlsScaling::initialize() {
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
-
-  std::string scaled_controls_topic;
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
-
-  if (!nh_local_.getParam("max_wheel_rate", max_wheel_rate_))
-    max_wheel_rate_ = 6.0;
-
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
-  max_wheel_rate_srv_ = nh_.advertiseService("max_wheel_rate_srv", &ControlsScaling::updateMaxWheelRate, this);
-  trigger_srv_ = nh_.advertiseService("controls_scaling_trigger_srv", &ControlsScaling::updateMaxWheelRate, this);
 }
 
 int main(int argc, char** argv) {

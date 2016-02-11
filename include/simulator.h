@@ -52,12 +52,13 @@ public:
   Simulator();
 
 private:
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   void initialize();
   void computeVelocity();
   void computePose();
   void publishTransform();
   void publishPoseStamped();
+
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -73,6 +74,9 @@ private:
 
   int loop_rate_;
   double Tp_, Tf_;
+
+  std::string parent_frame_;
+  std::string child_frame_;
 
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;

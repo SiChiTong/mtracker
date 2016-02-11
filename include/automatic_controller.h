@@ -49,13 +49,13 @@ public:
   AutomaticController();
 
 private:
+  void initialize();
+  void computeControls();
+
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);
   void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg);
   void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg);
-
-  void initialize();
-  void computeControls();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;

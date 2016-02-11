@@ -54,23 +54,6 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
   }
 }
 
-void AutomaticController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
-  pose_ = *pose_msg;
-}
-
-void AutomaticController::velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg) {
-  velocity_ = *velocity_msg;
-}
-
-void AutomaticController::refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg) {
-  ref_pose_ = *ref_pose_msg;
-}
-
-void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg) {
-  ref_velocity_ = *ref_velocity_msg;
-}
-
-
 void AutomaticController::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
@@ -120,6 +103,22 @@ void AutomaticController::computeControls() {
 
   controls_.linear.x = v;
   controls_.angular.z = w;
+}
+
+void AutomaticController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
+  pose_ = *pose_msg;
+}
+
+void AutomaticController::velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg) {
+  velocity_ = *velocity_msg;
+}
+
+void AutomaticController::refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg) {
+  ref_pose_ = *ref_pose_msg;
+}
+
+void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg) {
+  ref_velocity_ = *ref_velocity_msg;
 }
 
 int main(int argc, char** argv) {

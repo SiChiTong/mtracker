@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ 
 find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy message_generation)
 #find_package(Boost REQUIRED COMPONENTS xxx)
 
-add_service_files(FILES MaxWheelRate.srv Trigger.srv)
+add_service_files(FILES MaxWheelRate.srv ManualGains.srv Trigger.srv)
 generate_messages(DEPENDENCIES)
 
 catkin_package(
@@ -28,6 +28,7 @@ target_link_libraries(reference_generator ${catkin_LIBRARIES})
 
 add_executable(manual_controller src/manual_controller.cpp include/manual_controller.h)
 target_link_libraries(manual_controller ${catkin_LIBRARIES})
+add_dependencies(manual_controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(automatic_controller src/automatic_controller.cpp include/automatic_controller.h)
 target_link_libraries(automatic_controller ${catkin_LIBRARIES})

@@ -77,6 +77,9 @@ private:
   double time_;
   bool paused_;
 
+  std::string parent_frame_;
+  std::string child_frame_;
+
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
 };
