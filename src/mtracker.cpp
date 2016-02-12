@@ -107,6 +107,7 @@ void MTracker::initialize() {
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(odom_pose_topic + "_stamped", 10);
+  trigger_srv_ = nh_.advertiseService("mtracker_trigger_srv", &MTracker::trigger, this);
 }
 
 void MTracker::transferData() {
@@ -147,6 +148,11 @@ void MTracker::publishPoseStamped() {
 
 void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
   controls_ = *controls_msg;
+}
+
+bool MTracker::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  mtracker_active_ = req.activate;
+  return true;
 }
 
 int main(int argc, char** argv) {

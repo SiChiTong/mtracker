@@ -92,6 +92,7 @@ void ReferenceGenerator::initialize() {
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic + "_stamped", 10);
+  trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
 
   switch (trajectory_type) {
     case 0:
@@ -152,6 +153,11 @@ void ReferenceGenerator::publish() {
   pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
 
   pose_stamped_pub_.publish(pose);
+}
+
+bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  reference_generator_active_ = req.activate;
+  return true;
 }
 
 int main(int argc, char** argv) {

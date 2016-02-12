@@ -40,6 +40,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <mtracker/Trigger.h>
 #include <tf/transform_broadcaster.h>
 
 #include "../include/trajectories.h"
@@ -61,27 +62,31 @@ private:
   void update(double dt);
   void publish();
 
+  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
   ros::Publisher pose_pub_;
   ros::Publisher velocity_pub_;
   ros::Publisher pose_stamped_pub_;
+  ros::ServiceServer trigger_srv_;
 
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;
-
-  int loop_rate_;
-
-  Trajectory* trajectory_;
-  double time_;
-  bool paused_;
 
   std::string parent_frame_;
   std::string child_frame_;
 
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
+
+  int loop_rate_;
+  bool reference_generator_active_;
+
+  Trajectory* trajectory_;
+  double time_;
+  bool paused_;
 };
 
 } // namespace mtracker

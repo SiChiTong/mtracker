@@ -69,10 +69,9 @@ private:
 
   geometry_msgs::Twist controls_;
 
+  bool manual_control_active_;
   double v_gain_;  // Linear velocity gain
   double w_gain_;  // Angular velocity gain
-
-  bool manual_control_active_;
 };
 
 } // namespace mtracker

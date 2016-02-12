@@ -83,6 +83,7 @@ void AutomaticController::initialize() {
   ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic, 10, &AutomaticController::refPoseCallback, this);
   ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(reference_velocity_topic, 10, &AutomaticController::refVelocityCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
+  trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &AutomaticController::trigger, this);
 }
 
 void AutomaticController::computeControls() {
@@ -119,6 +120,11 @@ void AutomaticController::refPoseCallback(const geometry_msgs::Pose2D::ConstPtr&
 
 void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg) {
   ref_velocity_ = *ref_velocity_msg;
+}
+
+bool AutomaticController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  automatic_controller_active_ = req.activate;
+  return true;
 }
 
 int main(int argc, char** argv) {

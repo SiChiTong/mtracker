@@ -15,7 +15,7 @@ catkin_package(
   CATKIN_DEPENDS roscpp geometry_msgs tf joy message_runtime
   DEPENDS system_lib)
 
-include_directories(include ${catkin_INCLUDE_DIRS}) #${Boost_INCLUDE_DIRS}
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(mtracker src/mtracker.cpp include/mtracker.h include/serial.h)
 target_link_libraries(mtracker ${catkin_LIBRARIES})
