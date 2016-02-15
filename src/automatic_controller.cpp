@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
+AutomaticController::AutomaticController() : nh_(""), nh_local_("~"), automatic_controller_active_(true) {
   initialize();
 
   ROS_INFO("Automatic controller [OK]");
@@ -47,8 +47,10 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
   while (nh_.ok()) {
     ros::spinOnce();
 
-    computeControls();
-    controls_pub_.publish(controls_);
+    if (automatic_controller_active_) {
+      computeControls();
+      controls_pub_.publish(controls_);
+    }
 
     rate.sleep();
   }
