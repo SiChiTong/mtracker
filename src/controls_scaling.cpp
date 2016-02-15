@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), controls_scaling_active_(false) {
+ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), controls_scaling_active_(true) {
   initialize();
 
   ROS_INFO("MTracker controls scaling [OK]");
@@ -59,8 +59,8 @@ void ControlsScaling::initialize() {
 
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
-  trigger_srv_ = nh_.advertiseService("controls_scaling_trigger_srv", &ControlsScaling::trigger, this);
   max_wheel_rate_srv_ = nh_.advertiseService("max_wheel_rate_srv", &ControlsScaling::updateMaxWheelRate, this);
+  trigger_srv_ = nh_.advertiseService("controls_scaling_trigger_srv", &ControlsScaling::trigger, this);
 }
 
 void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
