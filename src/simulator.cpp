@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-Simulator::Simulator() : nh_(""), nh_local_("~") {
+Simulator::Simulator() : nh_(""), nh_local_("~"), simulator_active_(true) {
   initialize();
 
   ROS_INFO("MTracker simulator [OK]");
@@ -47,14 +47,16 @@ Simulator::Simulator() : nh_(""), nh_local_("~") {
   while (nh_.ok()) {
     ros::spinOnce();
 
-    computeVelocity();
-    computePose();
+    if (simulator_active_) {
+      computeVelocity();
+      computePose();
 
-    velocity_pub_.publish(velocity_);
-    pose_pub_.publish(pose_);
+      velocity_pub_.publish(velocity_);
+      pose_pub_.publish(pose_);
 
-    publishTransform();
-    publishPoseStamped();
+      publishTransform();
+      publishPoseStamped();
+    }
 
     rate.sleep();
   }
