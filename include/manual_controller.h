@@ -55,8 +55,8 @@ private:
 
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
   void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg);
-  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateManualGains(mtracker::ManualGains::Request &req, mtracker::ManualGains::Response &res);
+  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -64,8 +64,8 @@ private:
   ros::Subscriber joy_sub_;
   ros::Subscriber keys_sub_;
   ros::Publisher controls_pub_;
-  ros::ServiceServer trigger_srv_;
   ros::ServiceServer manual_gains_srv_;
+  ros::ServiceServer trigger_srv_;
 
   geometry_msgs::Twist controls_;
 
