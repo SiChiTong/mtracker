@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), time_(0.0) {
+ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(true), time_(0.0) {
   initialize();
 
   ROS_INFO("Reference generator [OK]");
@@ -48,14 +48,15 @@ ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), time_(0.0) {
   while (nh_.ok()) {
     ros::spinOnce();
 
-    double dt = (ros::Time::now() - time_stamp).toSec();
-    time_stamp = ros::Time::now();
+    if (reference_generator_active_) {
+      double dt = (ros::Time::now() - time_stamp).toSec();
+      time_stamp = ros::Time::now();
 
-    if (!paused_) {
-      update(dt);
+      if (!paused_)
+        update(dt);
+
       publish();
     }
-
     rate.sleep();
   }
 }
@@ -92,6 +93,7 @@ void ReferenceGenerator::initialize() {
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic + "_stamped", 10);
+  play_pause_srv_ = nh_.advertiseService("reference_play_pause_srv", &ReferenceGenerator::playPause, this);
   trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
 
   switch (trajectory_type) {
@@ -102,7 +104,7 @@ void ReferenceGenerator::initialize() {
       trajectory_ = new LinearTrajectory(0.1, M_PI_4);
       break;
     case 2:
-      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1);
+      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 2, 1);
       break;
     case 3:
       trajectory_ = new LemniscateTrajectory();
@@ -153,6 +155,17 @@ void ReferenceGenerator::publish() {
   pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
 
   pose_stamped_pub_.publish(pose);
+}
+
+bool ReferenceGenerator::playPause(mtracker::PlayPause::Request &req, mtracker::PlayPause::Response &res) {
+  if (req.play)
+    start();
+  else if (req.pause)
+    pause();
+  else
+    stop();
+
+  return true;
 }
 
 bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
