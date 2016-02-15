@@ -6,25 +6,28 @@ set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ 
 find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy message_generation)
 #find_package(Boost REQUIRED COMPONENTS xxx)
 
-add_service_files(FILES MaxWheelRate.srv ManualGains.srv Trigger.srv)
+add_service_files(FILES MaxWheelRate.srv ManualGains.srv PlayPause.srv Trigger.srv)
 generate_messages(DEPENDENCIES)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp geometry_msgs tf joy message_runtime
+  CATKIN_DEPENDS roscpp geometry_msgs tf joy obstacle_detector message_runtime
   DEPENDS system_lib)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(mtracker src/mtracker.cpp include/mtracker.h include/serial.h)
 target_link_libraries(mtracker ${catkin_LIBRARIES})
+add_dependencies(mtracker ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(simulator src/simulator.cpp include/simulator.h)
 target_link_libraries(simulator ${catkin_LIBRARIES})
+add_dependencies(simulator ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(reference_generator src/reference_generator.cpp include/reference_generator.h include/trajectories.h)
 target_link_libraries(reference_generator ${catkin_LIBRARIES})
+add_dependencies(reference_generator ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(manual_controller src/manual_controller.cpp include/manual_controller.h)
 target_link_libraries(manual_controller ${catkin_LIBRARIES})
@@ -32,6 +35,11 @@ add_dependencies(manual_controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(automatic_controller src/automatic_controller.cpp include/automatic_controller.h)
 target_link_libraries(automatic_controller ${catkin_LIBRARIES})
+add_dependencies(automatic_controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
+add_executable(obstacle_controller src/obstacle_controller.cpp include/obstacle_controller.h)
+target_link_libraries(obstacle_controller ${catkin_LIBRARIES})
+add_dependencies(obstacle_controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(controls_scaling src/controls_scaling.cpp include/controls_scaling.h)
 target_link_libraries(controls_scaling ${catkin_LIBRARIES})
