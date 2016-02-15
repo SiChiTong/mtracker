@@ -4,10 +4,12 @@ project(mtracker)
 set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 
 find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy message_generation)
-#find_package(Boost REQUIRED COMPONENTS xxx)
+find_package(obstacle_detector REQUIRED)
+find_package(Armadillo REQUIRED)
+find_package(Boost 1.46.1 REQUIRED system)
 
 add_service_files(FILES MaxWheelRate.srv ManualGains.srv PlayPause.srv Trigger.srv)
-generate_messages(DEPENDENCIES)
+generate_messages()
 
 catkin_package(
   INCLUDE_DIRS include
@@ -15,10 +17,10 @@ catkin_package(
   CATKIN_DEPENDS roscpp geometry_msgs tf joy obstacle_detector message_runtime
   DEPENDS system_lib)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${obstacle_detector_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_executable(mtracker src/mtracker.cpp include/mtracker.h include/serial.h)
-target_link_libraries(mtracker ${catkin_LIBRARIES})
+target_link_libraries(mtracker ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(mtracker ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(simulator src/simulator.cpp include/simulator.h)
@@ -38,13 +40,12 @@ target_link_libraries(automatic_controller ${catkin_LIBRARIES})
 add_dependencies(automatic_controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(obstacle_controller src/obstacle_controller.cpp include/obstacle_controller.h)
-target_link_libraries(obstacle_controller ${catkin_LIBRARIES})
+target_link_libraries(obstacle_controller ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES})
 add_dependencies(obstacle_controller ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(controls_scaling src/controls_scaling.cpp include/controls_scaling.h)
 target_link_libraries(controls_scaling ${catkin_LIBRARIES})
 add_dependencies(controls_scaling ${${PROJECT_NAME}_EXPORTED_TARGETS})
-#add_dependencies(controls_scaling mtracker_gencpp)
 
 #add_executable(trajectory_recorder src/trajectory_recorder.cpp include/trajectory_recorder.h)
 #target_link_libraries(trajectory_recorder ${catkin_LIBRARIES} /usr/local/lib/libyaml-cpp.a)
