@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025) {
+MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), mtracker_active_(true) {
   initialize();
 
   com_ = new Serial("/dev/ttyUSB0");
@@ -61,13 +61,15 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
   while (nh_.ok()) {
     ros::spinOnce();
 
-    transferData();
+    if (mtracker_active_) {
+      transferData();
 
-    pose_pub_.publish(pose_);
-    velocity_pub_.publish(velocity_);
+      pose_pub_.publish(pose_);
+      velocity_pub_.publish(velocity_);
 
-    publishTransform();
-    publishPoseStamped();
+      publishTransform();
+      publishPoseStamped();
+    }
 
     rate.sleep();
   }
@@ -129,7 +131,7 @@ void MTracker::transferData() {
 
 void MTracker::publishTransform() {
   pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose_.theta));
+  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
   pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), parent_frame_, child_frame_));
 }
 
