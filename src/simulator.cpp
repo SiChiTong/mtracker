@@ -84,8 +84,8 @@ void Simulator::initialize() {
   if (!nh_local_.getParam("time_constant", Tf_))
     Tf_ = 0.1;
 
-  if (!nh_local_.getParam("parent_frame", parent_frame_))
-    parent_frame_ = "world";
+  if (!nh_.getParam("world_frame", world_frame_))
+    world_frame_ = "world";
 
   if (!nh_local_.getParam("child_frame", child_frame_))
     child_frame_ = "virtual";
@@ -111,7 +111,7 @@ void Simulator::computePose() {
 void Simulator::publishTransform() {
   pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
   pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
-  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), parent_frame_, child_frame_));
+  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), world_frame_, child_frame_));
 }
 
 void Simulator::publishPoseStamped() {

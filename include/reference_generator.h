@@ -78,7 +78,7 @@ private:
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;
 
-  std::string parent_frame_;
+  std::string world_frame_;
   std::string child_frame_;
 
   geometry_msgs::Pose2D pose_;

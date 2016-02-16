@@ -4,7 +4,7 @@ project(mtracker)
 set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 
 find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy message_generation)
-find_package(obstacle_detector REQUIRED)
+#find_package(obstacle_detector REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(Boost 1.46.1 REQUIRED system)
 

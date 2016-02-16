@@ -84,8 +84,8 @@ void ReferenceGenerator::initialize() {
   if (!nh_local_.getParam("trajectory_paused", paused_))
     paused_ = false;
 
-  if (!nh_local_.getParam("parent_frame", parent_frame_))
-    parent_frame_ = "world";
+  if (!nh_.getParam("world_frame", world_frame_))
+    world_frame_ = "world";
 
   if (!nh_local_.getParam("child_frame", child_frame_))
     child_frame_ = "reference";
@@ -104,7 +104,7 @@ void ReferenceGenerator::initialize() {
       trajectory_ = new LinearTrajectory(0.1, M_PI_4);
       break;
     case 2:
-      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 2, 1);
+      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1);
       break;
     case 3:
       trajectory_ = new LemniscateTrajectory();
@@ -143,7 +143,7 @@ void ReferenceGenerator::publish() {
 
   tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
   tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
-  tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), parent_frame_, child_frame_));
+  tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), world_frame_, child_frame_));
 
   geometry_msgs::PoseStamped pose;
 
