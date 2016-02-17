@@ -65,19 +65,16 @@ void ObstacleController::initialize() {
   if (!nh_.getParam("pose_topic", pose_topic))
     pose_topic = "pose";
 
-  std::string velocity_topic;
-  if (!nh_.getParam("velocity_topic", velocity_topic))
-    velocity_topic = "velocity";
-
   std::string controls_topic;
   if (!nh_.getParam("controls_topic", controls_topic))
     controls_topic = "controls";
 
+  std::string obstacles_topic;
+  if (!nh_local_.getParam("obstacles_topic", obstacles_topic))
+    obstacles_topic = "obstacles";
+
   if (!nh_local_.getParam("world_radius", world_.r))
     world_.r = 5.0;
-
-  world_.x = 0.0;
-  world_.y = 0.0;
 
   if (!nh_local_.getParam("kappa", kappa_))
     kappa_ = 3.0;
@@ -95,9 +92,9 @@ void ObstacleController::initialize() {
     a_ = 1.0;
 
   pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &ObstacleController::poseCallback, this);
-  velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(velocity_topic, 10, &ObstacleController::velocityCallback, this);
-  obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>("obstacles", 10, &ObstacleController::obstaclesCallback, this);
+  obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic, 10, &ObstacleController::obstaclesCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
+  update_params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
   trigger_srv_ = nh_.advertiseService("obstacle_controller_trigger_srv", &ObstacleController::trigger, this);
 }
 
@@ -215,10 +212,10 @@ vec ObstacleController::getGradV() {
 }
 
 void ObstacleController::computeControls() {
-  double b, h, g, V, C, w;   // Variable parameters
+  double b, h, g;   // Variable parameters
 
   mat B = mat(3, 2).zeros();    // Input matrix
-  vec L = {0.0, 0.0, 0.0};      // [sin(fi) cos(fi) 0]^T
+  vec L = {0.0, 0.0, 0.0};      // [sin(fi) -cos(fi) 0]^T
   vec gradV = {0.0, 0.0, 0.0};  // Gradient of navigation function
   vec u_p = {0.0, 0.0, 0.0};    // Control signals time derivative
   vec u = {0.0, 0.0, 0.0};      // Control signals
@@ -262,10 +259,6 @@ void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
   pose_ = *pose_msg;
 }
 
-void ObstacleController::velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg) {
-  velocity_ = *velocity_msg;
-}
-
 void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles) {
   obstacles_.clear();
 
@@ -277,6 +270,20 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
 
     obstacles_.push_back(o);
   }
+}
+
+bool ObstacleController::updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res) {
+  if (req.kappa >= 0.0 && req.epsilon >= 0.0 && req.k_w >= 0.0 && req.b_ >= 0.0 && req.a >= 0.0) {
+    kappa_ = req.kappa;
+    epsilon_ = req.epsilon;
+    k_w_ = req.k_w;
+    b_dash_ = req.b_;
+    a_ = req.a;
+
+    return true;
+  }
+  else
+    return false;
 }
 
 bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {

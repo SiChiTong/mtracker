@@ -44,6 +44,7 @@
   </node>
 
   <node name="obstacle_controller" pkg="mtracker" type="obstacle_controller" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="obstacles_topic" type="string" value="obstacles"/>
     <param name="world_radius" value="5.0"/>
     <param name="kappa"        value="3.0"/>
     <param name="epsilon"      value="0.0001"/>

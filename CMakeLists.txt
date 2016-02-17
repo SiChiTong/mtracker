@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy messag
 find_package(Armadillo REQUIRED)
 find_package(Boost 1.46.1 REQUIRED system)
 
-add_service_files(FILES MaxWheelRate.srv ManualGains.srv PlayPause.srv Trigger.srv)
+add_service_files(FILES MaxWheelRate.srv ManualGains.srv ObstacleControllerParams.srv PlayPause.srv Trigger.srv)
 generate_messages()
 
 catkin_package(

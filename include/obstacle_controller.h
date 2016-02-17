@@ -43,12 +43,14 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <mtracker/Trigger.h>
+#include <mtracker/ObstacleControllerParams.h>
 #include <obstacle_detector/Obstacles.h>
 
 namespace mtracker
 {
 
 struct Obstacle {
+  Obstacle() : x(0.0), y(0.0), r(0.0) {}
   double x, y, r;
 };
 
@@ -63,7 +65,7 @@ private:
 
   double getBetaWorld();          // World beta function
   double getBeta_i(Obstacle o);   // Obstacles beta functions
-  double getBeta();               // Total Beta function (product of all betas)
+  double getBeta();               // Total beta function (product of all betas)
 
   arma::vec getGradBetaWorld();         // Gradient of world beta function
   arma::vec getGradBeta_i(Obstacle o);  // Gradient of obstacles beta functions
@@ -73,28 +75,26 @@ private:
   arma::vec getGradV();     // Gradient of navigation function
 
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
-  void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
+  bool updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
   ros::Subscriber pose_sub_;
-  ros::Subscriber velocity_sub_;
   ros::Subscriber obstacles_sub_;
   ros::Publisher controls_pub_;
+  ros::ServiceServer update_params_srv_;
   ros::ServiceServer trigger_srv_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;
-  geometry_msgs::Twist velocity_;
-
-  // Constant parameters
-  double a_, b_dash_, k_w_, epsilon_, kappa_;
 
   Obstacle world_;                   // Negative obstacle containing world
   std::vector<Obstacle> obstacles_;  // List of obstacles
+
+  double a_, b_dash_, k_w_, epsilon_, kappa_;   // Constant parameters
 
   int loop_rate_;
   bool obstacle_controller_active_;
