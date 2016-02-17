@@ -217,8 +217,8 @@ void ObstacleController::computeControls() {
   mat B = mat(3, 2).zeros();    // Input matrix
   vec L = {0.0, 0.0, 0.0};      // [sin(fi) -cos(fi) 0]^T
   vec gradV = {0.0, 0.0, 0.0};  // Gradient of navigation function
-  vec u_p = {0.0, 0.0, 0.0};    // Control signals time derivative
-  vec u = {0.0, 0.0, 0.0};      // Control signals
+  vec u_p = {0.0, 0.0};    // Control signals time derivative
+  vec u = {0.0, 0.0};      // Control signals
 
   // Auxiliary matrices
   arma::mat I = eye<mat>(2, 2);
