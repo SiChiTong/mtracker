@@ -76,8 +76,8 @@ private:
 
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
-  bool updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -85,8 +85,8 @@ private:
   ros::Subscriber pose_sub_;
   ros::Subscriber obstacles_sub_;
   ros::Publisher controls_pub_;
-  ros::ServiceServer update_params_srv_;
   ros::ServiceServer trigger_srv_;
+  ros::ServiceServer update_params_srv_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;

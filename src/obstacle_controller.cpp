@@ -38,7 +38,7 @@
 using namespace mtracker;
 using namespace arma;
 
-ObstacleController::ObstacleController() : nh_(""), nh_local_("~"), obstacle_controller_active_(true) {
+ObstacleController::ObstacleController() : nh_(""), nh_local_("~"), obstacle_controller_active_(false) {
   initialize();
 
   ROS_INFO("Obstacle controller [OK]");
@@ -94,8 +94,8 @@ void ObstacleController::initialize() {
   pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &ObstacleController::poseCallback, this);
   obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic, 10, &ObstacleController::obstaclesCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-  update_params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
   trigger_srv_ = nh_.advertiseService("obstacle_controller_trigger_srv", &ObstacleController::trigger, this);
+  update_params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
 }
 
 double ObstacleController::getBetaWorld() {
@@ -272,6 +272,11 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
   }
 }
 
+bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  obstacle_controller_active_ = req.activate;
+  return true;
+}
+
 bool ObstacleController::updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res) {
   if (req.kappa >= 0.0 && req.epsilon >= 0.0 && req.k_w >= 0.0 && req.b_ >= 0.0 && req.a >= 0.0) {
     kappa_ = req.kappa;
@@ -284,11 +289,6 @@ bool ObstacleController::updateParams(mtracker::ObstacleControllerParams::Reques
   }
   else
     return false;
-}
-
-bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
-  obstacle_controller_active_ = req.activate;
-  return true;
 }
 
 int main(int argc, char** argv) {

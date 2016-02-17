@@ -63,8 +63,8 @@ private:
   void update(double dt);
   void publish();
 
-  bool playPause(mtracker::PlayPause::Request &req, mtracker::PlayPause::Response &res);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool playPause(mtracker::PlayPause::Request &req, mtracker::PlayPause::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -72,8 +72,8 @@ private:
   ros::Publisher pose_pub_;
   ros::Publisher velocity_pub_;
   ros::Publisher pose_stamped_pub_;
-  ros::ServiceServer play_pause_srv_;
   ros::ServiceServer trigger_srv_;
+  ros::ServiceServer play_pause_srv_;
 
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;
@@ -84,12 +84,12 @@ private:
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
 
-  int loop_rate_;
-  bool reference_generator_active_;
-
   Trajectory* trajectory_;
   double time_;
   bool paused_;
+
+  int loop_rate_;
+  bool reference_generator_active_;
 };
 
 } // namespace mtracker

@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ManualController::ManualController() : nh_(""), nh_local_("~"), manual_control_active_(true) {
+ManualController::ManualController() : nh_(""), nh_local_("~"), manual_control_active_(false) {
   initialize();
 
   ROS_INFO("MTracker manual controller [OK]");
@@ -67,8 +67,8 @@ void ManualController::initialize() {
   joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &ManualController::joyCallback, this);
   keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-  manual_gains_srv_ = nh_.advertiseService("manual_gains_srv", &ManualController::updateManualGains, this);
   trigger_srv_ = nh_.advertiseService("manual_controller_trigger_srv", &ManualController::trigger, this);
+  manual_gains_srv_ = nh_.advertiseService("manual_gains_srv", &ManualController::updateManualGains, this);
 }
 
 void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {

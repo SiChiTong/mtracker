@@ -64,8 +64,8 @@ private:
 
   ros::Subscriber controls_sub_;
   ros::Publisher controls_pub_;
-  ros::ServiceServer max_wheel_rate_srv_;
   ros::ServiceServer trigger_srv_;
+  ros::ServiceServer max_wheel_rate_srv_;
 
   bool controls_scaling_active_;
   double max_wheel_rate_;

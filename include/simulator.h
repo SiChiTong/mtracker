@@ -80,9 +80,10 @@ private:
   geometry_msgs::Twist velocity_;
   geometry_msgs::Twist controls_;
 
+  double Tp_, Tf_;
+
   int loop_rate_;
   bool simulator_active_;
-  double Tp_, Tf_;
 };
 
 } // namespace mtracker
