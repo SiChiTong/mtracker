@@ -36,6 +36,9 @@
 #ifndef OBSTACLE_CONTROLLER_H
 #define OBSTACLE_CONTROLLER_H
 
+#include <armadillo>
+#include <vector>
+
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
@@ -45,6 +48,10 @@
 namespace mtracker
 {
 
+struct Obstacle {
+  double x, y, r;
+};
+
 class ObstacleController
 {
 public:
@@ -53,6 +60,17 @@ public:
 private:
   void initialize();
   void computeControls();
+
+  double getBetaWorld();          // World beta function
+  double getBeta_i(Obstacle o);   // Obstacles beta functions
+  double getBeta();               // Total Beta function (product of all betas)
+
+  arma::vec getGradBetaWorld();         // Gradient of world beta function
+  arma::vec getGradBeta_i(Obstacle o);  // Gradient of obstacles beta functions
+  arma::vec getGradBeta();              // Gradient of total beta function
+
+  double getV();            // Navigation function
+  arma::vec getGradV();     // Gradient of navigation function
 
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);
@@ -71,6 +89,12 @@ private:
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
+
+  // Constant parameters
+  double a_, b_dash_, k_w_, epsilon_, kappa_;
+
+  Obstacle world_;                   // Negative obstacle containing world
+  std::vector<Obstacle> obstacles_;  // List of obstacles
 
   int loop_rate_;
   bool obstacle_controller_active_;

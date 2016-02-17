@@ -36,8 +36,9 @@
 #include "../include/obstacle_controller.h"
 
 using namespace mtracker;
+using namespace arma;
 
-ObstacleController::ObstacleController() : nh_(""), nh_local_("~") {
+ObstacleController::ObstacleController() : nh_(""), nh_local_("~"), obstacle_controller_active_(true) {
   initialize();
 
   ROS_INFO("Obstacle controller [OK]");
@@ -47,8 +48,10 @@ ObstacleController::ObstacleController() : nh_(""), nh_local_("~") {
   while (nh_.ok()) {
     ros::spinOnce();
 
-    computeControls();
-    controls_pub_.publish(controls_);
+    if (obstacle_controller_active_) {
+      computeControls();
+      controls_pub_.publish(controls_);
+    }
 
     rate.sleep();
   }
@@ -70,27 +73,189 @@ void ObstacleController::initialize() {
   if (!nh_.getParam("controls_topic", controls_topic))
     controls_topic = "controls";
 
+  if (!nh_local_.getParam("world_radius", world_.r))
+    world_.r = 5.0;
+
+  world_.x = 0.0;
+  world_.y = 0.0;
+
+  if (!nh_local_.getParam("kappa", kappa_))
+    kappa_ = 3.0;
+
+  if (!nh_local_.getParam("epsilon", epsilon_))
+    epsilon_ = 0.0001;
+
+  if (!nh_local_.getParam("k_w", k_w_))
+    k_w_ = 0.1;
+
+  if (!nh_local_.getParam("b_", b_dash_))
+    b_dash_ = 5.0;
+
+  if (!nh_local_.getParam("a", a_))
+    a_ = 1.0;
+
   pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &ObstacleController::poseCallback, this);
   velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(velocity_topic, 10, &ObstacleController::velocityCallback, this);
   obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>("obstacles", 10, &ObstacleController::obstaclesCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-  trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &ObstacleController::trigger, this);
+  trigger_srv_ = nh_.advertiseService("obstacle_controller_trigger_srv", &ObstacleController::trigger, this);
+}
+
+double ObstacleController::getBetaWorld() {
+  return pow(world_.r, 2.0) - pow(pose_.x - world_.x, 2.0) - pow(pose_.y - world_.y, 2.0);
+}
+
+double ObstacleController::getBeta_i(Obstacle o) {
+  return pow(pose_.x - o.x, 2.0) + pow(pose_.y - o.y, 2.0) - pow(o.r, 2.0);
+}
+
+double ObstacleController::getBeta() {
+  double beta = getBetaWorld();
+
+  for (auto& o : obstacles_) {
+    beta *= getBeta_i(o);
+  }
+
+  return beta;
+}
+
+vec ObstacleController::getGradBetaWorld() {
+  vec gradB_0 = {0.0, 0.0, 0.0};
+
+  gradB_0(0) = -2.0 * (pose_.x - world_.x);
+  gradB_0(1) = -2.0 * (pose_.y - world_.y);
+  gradB_0(2) =  0.0;
+
+  return gradB_0;
+}
+
+vec ObstacleController::getGradBeta_i(Obstacle o) {
+  vec gradB_i = {0.0, 0.0, 0.0};
+
+  gradB_i(0) = 2.0 * (pose_.x - o.x);
+  gradB_i(1) = 2.0 * (pose_.y - o.y);
+  gradB_i(2) = 0.0;
+
+  return gradB_i;
+}
+
+vec ObstacleController::getGradBeta() {
+  // gradB = gradB0 * B1 * B2 * ... * Bn + B0 * gradB1 * B2 * ... * Bn + ... + B0 * B1 * B2 * ... * gradBn
+  vec gradB = {0.0, 0.0, 0.0};       // Total gradient
+  vec grad_part = {0.0, 0.0, 0.0};   // Part of gradient
+
+  // First factor: gradB0 * B1 * B2 * ... * Bn
+  grad_part = getGradBetaWorld();
+  for (int i = 0; i < obstacles_.size(); ++i)
+    grad_part *= getBeta_i(obstacles_[i]);
+
+  gradB += grad_part;
+
+  for (int i = 0; i < obstacles_.size(); ++i) {
+    grad_part = getGradBeta_i(obstacles_[i]);
+    grad_part *= getBetaWorld();
+
+    for (int j = 0; j < obstacles_.size(); ++j) {
+      if (i != j) {
+        grad_part *= getBeta_i(obstacles_[j]);
+      }
+    }
+
+    gradB += grad_part;
+  }
+
+  return gradB;
+}
+
+double ObstacleController::getV() {
+  double V = 0.0;
+
+  double squared_norm_r = pow(pose_.x, 2.0) + pow(pose_.y, 2.0);
+  double theta_factor = pow(pose_.theta, 2.0) * k_w_ / (k_w_ + squared_norm_r);
+
+  double N = squared_norm_r + theta_factor;
+  double D = pow(pow(N, kappa_) + getBeta(), 1.0 / kappa_);
+
+  if (D != 0.0)
+    V = N / D;
+
+  return V;
+}
+
+vec ObstacleController::getGradV() {
+  vec gradV = {0.0, 0.0, 0.0};
+  vec gradB = {0.0, 0.0, 0.0};
+
+  double i_kappa = 1.0 / kappa_;
+
+  double squared_norm_r = pow(pose_.x, 2.0) + pow(pose_.y, 2.0);
+  double theta_factor = pow(pose_.theta, 2.0) * k_w_ / (k_w_ + squared_norm_r);
+
+  double N = squared_norm_r + theta_factor;            // Numerator of V
+  double D = pow(pow(N, kappa_) + getBeta(), i_kappa);  // Denominator of V
+
+  // Numerator derivatives
+  double dNdx = 2.0 * pose_.x * (1.0 - theta_factor / (k_w_ + squared_norm_r));
+  double dNdy = 2.0 * pose_.y * (1.0 - theta_factor / (k_w_ + squared_norm_r));
+  double dNdth = 2.0 * pose_.theta * k_w_ / (k_w_ + squared_norm_r);
+
+  // Denominator derivatives
+  gradB = getGradBeta();
+  double dDdx = i_kappa * pow(D, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdx + gradB(0));
+  double dDdy = i_kappa * pow(D, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdy + gradB(1));
+  double dDdth = i_kappa * pow(D, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdth + gradB(2));
+
+  if (D != 0.0) {
+    gradV(0) = (dNdx * D - N * dDdx) / pow(D, 2.0);     // dV/dx
+    gradV(1) = (dNdy * D - N * dDdy) / pow(D, 2.0);     // dV/dy
+    gradV(2) = (dNdth * D - N * dDdth) / pow(D, 2.0);   // dV/dtheta
+  }
+
+  return gradV;
 }
 
 void ObstacleController::computeControls() {
-  double x = pose_.x;
-  double y = pose_.y;
-  double theta = pose_.theta;
+  double b, h, g, V, C, w;   // Variable parameters
 
-  double v = 0.0; // Linear velocity
-  double w = 0.0; // Angular velocity
+  mat B = mat(3, 2).zeros();    // Input matrix
+  vec L = {0.0, 0.0, 0.0};      // [sin(fi) cos(fi) 0]^T
+  vec gradV = {0.0, 0.0, 0.0};  // Gradient of navigation function
+  vec u_p = {0.0, 0.0, 0.0};    // Control signals time derivative
+  vec u = {0.0, 0.0, 0.0};      // Control signals
 
-  /*
-   * HERE PUT THE CODE
-   */
+  // Auxiliary matrices
+  arma::mat I = eye<mat>(2, 2);
+  arma::mat J = { { 0.0, 1.0},
+                  {-1.0, 0.0} };
 
-  controls_.linear.x = v;
-  controls_.angular.z = w;
+  // Update input matrix
+  B(0, 0) = cos(pose_.theta);
+  B(1, 0) = sin(pose_.theta);
+  B(2, 1) = 1.0;
+
+  L(0) =  sin(pose_.theta);
+  L(1) = -cos(pose_.theta);
+
+  // Recalculate gradient of navigation function
+  gradV = getGradV();
+
+  // Recalculate parameter b
+  g = norm(trans(B) * gradV);
+  h = pow(g, 2.0) + epsilon_ * sqrt(g);
+
+  if (h != 0.0)
+    b = -b_dash_ * dot(L, gradV) / h;
+  else
+    b = 0.0;
+
+  // Calculate control signals time derivatives
+  u_p = -(a_ * I + b * J) * trans(B) * gradV;
+
+  // Integrate to control signals
+  u += u_p / static_cast<double>(loop_rate_);
+
+  controls_.linear.x = u(0);
+  controls_.angular.z = u(1);
 }
 
 void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
@@ -101,8 +266,17 @@ void ObstacleController::velocityCallback(const geometry_msgs::Twist::ConstPtr& 
   velocity_ = *velocity_msg;
 }
 
-void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg) {
-  //
+void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles) {
+  obstacles_.clear();
+
+  Obstacle o;
+  for (int i = 0; i < obstacles->radii.size(); ++i) {
+    o.x = obstacles->centre_points[i].x;
+    o.y = obstacles->centre_points[i].y;
+    o.r = obstacles->radii[i];
+
+    obstacles_.push_back(o);
+  }
 }
 
 bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {

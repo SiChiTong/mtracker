@@ -1,16 +1,3 @@
-/***
- * This node is used for trajectory recording. When triggered on,
- * it synchronously saves consecutive Poses and Velocities obtained
- * from the robot or its simulation. It can be further processed as
- * reference trajectory for some other robot. The data is stored in
- * a .yaml file. To trigger data recording on, a ros service call
- * must be made for the "trajectory_recorder" service.
- *
- * Mateusz Przybyla
- * Chair of Control and Systems Engineering
- * Faculty of Computing
- * Poznan University of Technology
-***/
 
 #include "../include/trajectory_recorder.h"
 
