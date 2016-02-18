@@ -47,5 +47,5 @@ add_executable(controls_scaling src/controls_scaling.cpp include/controls_scalin
 target_link_libraries(controls_scaling ${catkin_LIBRARIES})
 add_dependencies(controls_scaling ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-#add_executable(trajectory_recorder src/trajectory_recorder.cpp include/trajectory_recorder.h)
-#target_link_libraries(trajectory_recorder ${catkin_LIBRARIES} /usr/local/lib/libyaml-cpp.a)
+add_executable(data_recorder src/data_recorder.cpp include/data_recorder.h)
+target_link_libraries(data_recorder ${catkin_LIBRARIES} libyaml-cpp.a)

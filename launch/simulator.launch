@@ -67,6 +67,11 @@
     <param name="time_constant" value="0.1"/>
   </node>
 
+  <node name="data_recorder" pkg="mtracker" type="data_recorder" respawn="false" required="true" output="screen">
+    <param name="use_yaml" type="bool" value="true"/>
+    <param name="use_txt"  type="bool" value="true"/>
+  </node>
+
   <!-- ============= -->
   <!-- Visualization -->
   <!-- ============= -->  
