@@ -10,11 +10,16 @@ echo "---------------------------";
 echo "     Starting roscore      ";
 echo "        Please wait        ";
 echo "---------------------------";
-ssh mtracker@MTracker "source /opt/ros/hydro/setup.bash && source /home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh && roscore" &
+ssh mtracker@MTracker "source /opt/ros/hydro/setup.bash && 
+  source /home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh && 
+  ps cax | grep roscore > /dev/null
+  if [ ! $? -eq 0 ]; then
+    roscore
+  fi" &
 
 sleep 5;
 echo "---------------------------";
 echo "      Starting Nodes       ";
 echo "---------------------------";
-roslaunch mtracker mtracker_manual_scanner.launch
+roslaunch mtracker mtracker_obstacle_controller.launch
 

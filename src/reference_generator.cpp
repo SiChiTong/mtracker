@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(true), time_(0.0) {
+ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(false), time_(0.0) {
   initialize();
 
   ROS_INFO("Reference generator [OK]");

@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-Simulator::Simulator() : nh_(""), nh_local_("~"), simulator_active_(true) {
+Simulator::Simulator() : nh_(""), nh_local_("~"), simulator_active_(false) {
   initialize();
 
   ROS_INFO("MTracker simulator [OK]");

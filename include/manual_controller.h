@@ -69,8 +69,8 @@ private:
 
   geometry_msgs::Twist controls_;
 
-  double v_gain_;  // Linear velocity gain
-  double w_gain_;  // Angular velocity gain
+  double k_v_;  // Linear velocity gain
+  double k_w_;  // Angular velocity gain
 
   bool manual_control_active_;
 };

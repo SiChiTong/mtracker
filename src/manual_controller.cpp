@@ -58,11 +58,11 @@ void ManualController::initialize() {
   if (!nh_.getParam("keys_topic", keys_topic))
     keys_topic = "keys";
 
-  if (!nh_local_.getParam("linear_gain", v_gain_))
-    v_gain_ = 0.4;
+  if (!nh_local_.getParam("k_v", k_v_))
+    k_v_ = 0.4;
 
-  if (!nh_local_.getParam("angular_gain", w_gain_))
-    w_gain_ = 1.5;
+  if (!nh_local_.getParam("k_w", k_w_))
+    k_w_ = 1.5;
 
   joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &ManualController::joyCallback, this);
   keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
@@ -73,16 +73,16 @@ void ManualController::initialize() {
 
 void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
   if (manual_control_active_) {
-    controls_.linear.x = v_gain_ * joy_msg->axes[1];
-    controls_.angular.z = w_gain_ * joy_msg->axes[0];
+    controls_.linear.x = k_v_ * joy_msg->axes[1];
+    controls_.angular.z = k_w_ * joy_msg->axes[0];
     controls_pub_.publish(controls_);
   }
 }
 
 void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
   if (manual_control_active_) {
-    controls_.linear.x = v_gain_ * keys_msg->linear.x;
-    controls_.angular.z = w_gain_ * keys_msg->angular.z;
+    controls_.linear.x = k_v_ * keys_msg->linear.x;
+    controls_.angular.z = k_w_ * keys_msg->angular.z;
     controls_pub_.publish(controls_);
   }
 }
@@ -94,8 +94,8 @@ bool ManualController::trigger(mtracker::Trigger::Request &req, mtracker::Trigge
 
 bool ManualController::updateManualGains(mtracker::ManualGains::Request &req, mtracker::ManualGains::Response &res) {
   if (req.k_v >= 0.0 && req.k_w >= 0.0) {
-    v_gain_ = req.k_v;
-    w_gain_ = req.k_w;
+    k_v_ = req.k_v;
+    k_w_ = req.k_w;
     return true;
   }
   else

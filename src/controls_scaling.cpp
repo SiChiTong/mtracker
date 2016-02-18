@@ -55,7 +55,7 @@ void ControlsScaling::initialize() {
     scaled_controls_topic = "scaled_controls";
 
   if (!nh_local_.getParam("max_wheel_rate", max_wheel_rate_))
-    max_wheel_rate_ = 6.0;
+    max_wheel_rate_ = 15.0;
 
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
