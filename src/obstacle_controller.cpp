@@ -188,8 +188,9 @@ vec ObstacleController::getGradV() {
   double squared_norm_r = pow(pose_.x, 2.0) + pow(pose_.y, 2.0);
   double theta_factor = pow(pose_.theta, 2.0) * k_w_ / (k_w_ + squared_norm_r);
 
-  double N = squared_norm_r + theta_factor;            // Numerator of V
+  double N = squared_norm_r + theta_factor;             // Numerator of V
   double D = pow(pow(N, kappa_) + getBeta(), i_kappa);  // Denominator of V
+  double D_no_kappa = pow(N, kappa_) + getBeta();  // Denominator of V
 
   // Numerator derivatives
   double dNdx = 2.0 * pose_.x * (1.0 - theta_factor / (k_w_ + squared_norm_r));
@@ -198,9 +199,9 @@ vec ObstacleController::getGradV() {
 
   // Denominator derivatives
   gradB = getGradBeta();
-  double dDdx = i_kappa * pow(D, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdx + gradB(0));
-  double dDdy = i_kappa * pow(D, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdy + gradB(1));
-  double dDdth = i_kappa * pow(D, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdth + gradB(2));
+  double dDdx = i_kappa * pow(D_no_kappa, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdx + gradB(0));
+  double dDdy = i_kappa * pow(D_no_kappa, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdy + gradB(1));
+  double dDdth = i_kappa * pow(D_no_kappa, i_kappa - 1.0) * (kappa_ * pow(N, kappa_ - 1.0) * dNdth + gradB(2));
 
   if (D != 0.0) {
     gradV(0) = (dNdx * D - N * dDdx) / pow(D, 2.0);     // dV/dx
