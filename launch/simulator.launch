@@ -1,0 +1,75 @@
+<!-- MTracker Simulator-only Launch File -->
+<launch>
+  <!-- ================= -->
+  <!-- Global parameters -->
+  <!-- ================= -->
+  <param name="loop_rate"             type="int"    value="100"/>
+  <param name="world_frame"           type="string" value="world"/>
+
+  <param name="controls_topic"        type="string" value="controls"/>
+  <param name="scaled_controls_topic" type="string" value="scaled_controls"/>
+
+  <param name="joy_topic"             type="string" value="joy"/>
+  <param name="keys_topic"            type="string" value="keys"/>
+
+  <param name="pose_topic"            type="string" value="pose"/>
+  <param name="velocity_topic"        type="string" value="velocity"/>
+
+  <param name="reference_pose_topic"      type="string" value="reference_pose"/>
+  <param name="reference_velocity_topic"  type="string" value="reference_velocity"/>
+
+  <param name="virtual_pose_topic"      type="string" value="virtual_pose"/>
+  <param name="virtual_velocity_topic"  type="string" value="virtual_velocity"/>
+
+  <!-- ================ -->
+  <!-- Controller Nodes -->
+  <!-- ================ -->
+  <node name="obstacle_controller" pkg="mtracker" type="obstacle_controller" respawn="false" required="true" output="screen">
+    <param name="obstacles_topic" type="string" value="obstacles"/>
+    <param name="world_radius" value="5.0"/>
+    <param name="kappa"        value="3.0"/>
+    <param name="epsilon"      value="0.0001"/>
+    <param name="k_w"          value="0.1"/>
+    <param name="b_"           value="5.0"/>
+    <param name="a"            value="1.0"/>
+  </node>
+
+  <node name="automatic_controller" pkg="mtracker" type="automatic_controller" respawn="false" required="true" output="screen">
+    <!-- o -->
+  </node>
+
+  <node name="manual_controller" pkg="mtracker" type="manual_controller" respawn="false" required="true" output="screen">
+    <param name="k_v" value="0.4"/>
+    <param name="k_w" value="1.5"/>
+  </node>
+
+  <node name="controls_scaling" pkg="mtracker" type="controls_scaling" respawn="false" required="true" output="screen">
+    <param name="max_wheel_rate" value="15.0"/>
+  </node>
+
+  <!-- =========== -->
+  <!-- Other Nodes -->
+  <!-- =========== -->
+  <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen">
+    <param name="trajectory_type"   value="2"/>
+    <param name="trajectory_paused" value="false"/>
+    <param name="child_frame" type="string" value="reference"/>
+  </node>
+
+  <node name="joy" pkg="joy" type="joy_node" respawn="false" required="true" output="screen">
+    <param name="dev" type="string" value="/dev/input/js0"/>
+    <param name="deadzone" value="0.0"/>
+    <param name="autorepeat_rate" value="0"/>
+  </node>
+
+  <node name="simulator" pkg="mtracker" type="simulator" respawn="false" required="true" output="screen">
+    <param name="child_frame" type="string" value="virtual"/>
+    <param name="time_constant" value="0.1"/>
+  </node>
+
+  <!-- ============= -->
+  <!-- Visualization -->
+  <!-- ============= -->  
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" required="true" output="screen" args="-d $(find mtracker)/resources/mtracker.rviz"/>
+</launch>
+
