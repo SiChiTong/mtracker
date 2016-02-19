@@ -51,6 +51,7 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
       t_.push_back(t);
       pose_list_.push_back(pose_);
       controls_list_.push_back(controls_);
+      scaled_controls_list_.push_back(scaled_controls_);
     }
 
     rate.sleep();
@@ -80,6 +81,10 @@ void DataRecorder::initialize() {
   if (!nh_.getParam("controls_topic", controls_topic))
     controls_topic = "controls";
 
+  std::string scaled_controls_topic;
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
+    scaled_controls_topic = "scaled_controls";
+
   if (!nh_local_.getParam("use_yaml", use_yaml_))
     use_yaml_ = true;
 
@@ -88,6 +93,7 @@ void DataRecorder::initialize() {
 
   pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &DataRecorder::poseCallback, this);
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &DataRecorder::controlsCallback, this);
+  scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &DataRecorder::scaledControlsCallback, this);
   trigger_srv_ = nh_.advertiseService("data_recorder_trigger_srv", &DataRecorder::trigger, this);
 
   std::string username = getenv("USER");
@@ -95,12 +101,16 @@ void DataRecorder::initialize() {
   boost::filesystem::create_directories(folder);
 }
 
-void DataRecorder::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose) {
-  pose_ = *pose;
+void DataRecorder::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
+  pose_ = *pose_msg;
 }
 
-void DataRecorder::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls) {
-  controls_ = *controls;
+void DataRecorder::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  controls_ = *controls_msg;
+}
+
+void DataRecorder::scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  scaled_controls_ = *controls_msg;
 }
 
 bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {
@@ -108,6 +118,7 @@ bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::R
     t_.clear();
     pose_list_.clear();
     controls_list_.clear();
+    scaled_controls_list_.clear();
 
     recording_data_ = true;
     start_mark_ = ros::Time::now();
@@ -168,10 +179,11 @@ void DataRecorder::emitTxtFile() {
   std::string filename = "/home/" + username + "/MTrackerRecords/MTrackerRecord_" + std::to_string(file_number) + ".txt";
   std::ofstream file(filename);
 
-  file << "n \t t \t x \t y \t theta \t v \t w \n";
+  file << "n \t t \t x \t y \t theta \t v \t w \t v_s \t w_s \n";
   for (int i = 0; i < t_.size(); ++i) {
     file << i << "\t" << t_[i] << "\t" << pose_list_[i].x << "\t" << pose_list_[i].y << "\t" << pose_list_[i].theta
-         << "\t" << controls_list_[i].linear.x << "\t" << controls_list_[i].angular.z << "\n";
+         << "\t" << controls_list_[i].linear.x << "\t" << controls_list_[i].angular.z
+         << "\t" << scaled_controls_list_[i].linear.x << "\t" << scaled_controls_list_[i].angular.z << "\n";
   }
 
   file.close();
@@ -179,6 +191,6 @@ void DataRecorder::emitTxtFile() {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "data_recorder");
-  mtracker::DataRecorder r;
+  mtracker::DataRecorder dr;
   return 0;
 }

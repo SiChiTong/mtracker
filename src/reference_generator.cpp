@@ -175,6 +175,6 @@ bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trig
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "reference_generator");
-  ReferenceGenerator RG;
+  ReferenceGenerator rg;
   return 0;
 }

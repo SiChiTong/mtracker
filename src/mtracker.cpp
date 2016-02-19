@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), mtracker_active_(true) {
+MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), mtracker_active_(false) {
   initialize();
 
   com_ = new Serial("/dev/ttyUSB0");

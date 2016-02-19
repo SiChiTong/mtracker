@@ -70,7 +70,7 @@ void ObstacleController::initialize() {
     controls_topic = "controls";
 
   std::string obstacles_topic;
-  if (!nh_local_.getParam("obstacles_topic", obstacles_topic))
+  if (!nh_.getParam("obstacles_topic", obstacles_topic))
     obstacles_topic = "obstacles";
 
   if (!nh_local_.getParam("world_radius", world_.r))
@@ -260,14 +260,14 @@ void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
   pose_ = *pose_msg;
 }
 
-void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles) {
+void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg) {
   obstacles_.clear();
 
   Obstacle o;
-  for (int i = 0; i < obstacles->radii.size(); ++i) {
-    o.x = obstacles->centre_points[i].x;
-    o.y = obstacles->centre_points[i].y;
-    o.r = obstacles->radii[i];
+  for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
+    o.x = obstacles_msg->centre_points[i].x;
+    o.y = obstacles_msg->centre_points[i].y;
+    o.r = obstacles_msg->radii[i];
 
     obstacles_.push_back(o);
   }

@@ -18,8 +18,10 @@
   <param name="joy_topic"             type="string" value="joy"/>
   <param name="keys_topic"            type="string" value="keys"/>
 
+  <!-- These are the best estimates of real pose and velocity -->
   <param name="pose_topic"            type="string" value="pose"/>
   <param name="velocity_topic"        type="string" value="velocity"/>
+  <!-- = -->
 
   <param name="odom_pose_topic"       type="string" value="odom_pose"/>
   <param name="odom_velocity_topic"   type="string" value="odom_velocity"/>
@@ -30,6 +32,9 @@
   <param name="virtual_pose_topic"      type="string" value="virtual_pose"/>
   <param name="virtual_velocity_topic"  type="string" value="virtual_velocity"/>
 
+  <param name="optitrack_pose_topic"    type="string" value="optitrack_pose"/>
+  <param name="obstacles_topic"         type="string" value="obstacles"/>
+
   <!-- ============== -->
   <!-- MTracker Nodes -->
   <!-- ============== -->
@@ -38,13 +43,12 @@
   </node>
 
   <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="child_frame" type="string" value="reference"/>
     <param name="trajectory_type"   value="2"/>
     <param name="trajectory_paused" value="false"/>
-    <param name="child_frame" type="string" value="reference"/>
   </node>
 
   <node name="obstacle_controller" pkg="mtracker" type="obstacle_controller" respawn="false" required="true" output="screen" machine="MTracker">
-    <param name="obstacles_topic" type="string" value="obstacles"/>
     <param name="world_radius" value="5.0"/>
     <param name="kappa"        value="3.0"/>
     <param name="epsilon"      value="0.0001"/>
@@ -54,7 +58,7 @@
   </node>
 
   <node name="automatic_controller" pkg="mtracker" type="automatic_controller" respawn="false" required="true" output="screen" machine="MTracker">
-    <!-- o -->
+    <!-- = -->
   </node>
 
   <node name="manual_controller" pkg="mtracker" type="manual_controller" respawn="false" required="true" output="screen" machine="MTracker">
@@ -64,6 +68,10 @@
 
   <node name="controls_scaling" pkg="mtracker" type="controls_scaling" respawn="false" required="true" output="screen" machine="MTracker">
     <param name="max_wheel_rate" value="15.0"/>
+  </node>
+
+  <node name="state_estimator" pkg="mtracker" type="state_estimator" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="child_frame" type="string" value="robot"/>
   </node>
 
   <!-- ======== -->
@@ -84,7 +92,7 @@
   </node>
 
   <node name="mocap_node" pkg="mocap_optitrack" type="mocap_node" respawn="false" launch-prefix="" required="true" output="screen" machine="MTrackerUI">
-    <rosparam file="$(find mocap_optitrack)/config/mocap.yaml" command="load" />
+    <rosparam file="$(find mocap_optitrack)/config/mocap.yaml" command="load"/>
   </node>
 
   <node name="data_recorder" pkg="mtracker" type="data_recorder" respawn="false" required="true" output="screen" machine="MTrackerUI">
@@ -109,7 +117,7 @@
     <param name="cluster" value="1"/>
   </node>
 
-  <node name="opti_track_to_scanner" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" machine="MTracker" args="0 0 0 0 0 0 opti_track scanner 100"/>
+  <node name="robot_to_scanner" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" machine="MTracker" args="0 0 0 0 0 0 robot scanner 100"/>
  
   <node name="obstacle_detector" pkg="obstacle_detector" type="obstacle_detector" respawn="false" required="false" output="screen" machine="MTracker">
     <param name="world_frame"    type="string" value="world"/>

@@ -33,72 +33,62 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef DATA_RECORDER_H
-#define DATA_RECORDER_H
-
-#include <boost/filesystem.hpp>
-//#include <yaml-cpp/yaml.h>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <ctime>
+#ifndef STATE_ESTIMATOR_H
+#define STATE_ESTIMATOR_H
 
 #include <ros/ros.h>
-#include <mtracker/Trigger.h>
-#include <obstacle_detector/Obstacles.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <mtracker/Trigger.h>
+#include <tf/transform_broadcaster.h>
 
-namespace mtracker {
+namespace mtracker
+{
 
-class DataRecorder
+class StateEstimator
 {
 public:
-  DataRecorder();
-  ~DataRecorder();
+  StateEstimator();
 
 private:
   void initialize();
-  void emitYamlFile();
-  void emitTxtFile();
+  void estimateState();
+  void publishTransform();
+  void publishPoseStamped();
 
-  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose);
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
-  void scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
-  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
-  bool trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res);
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
+  void optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
+  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
 
-  // ROS handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
-  ros::Subscriber pose_sub_;
-  ros::Subscriber controls_sub_;
   ros::Subscriber scaled_controls_sub_;
-  ros::Subscriber obstacles_sub_;
+  ros::Subscriber odom_pose_sub_;
+  ros::Subscriber optitrack_pose_sub_;
+  ros::Publisher pose_pub_;
+  ros::Publisher pose_stamped_pub_;
+  ros::Publisher velocity_pub_;
   ros::ServiceServer trigger_srv_;
 
-  // Data recorder variables
-  ros::Time start_mark_;
+  tf::TransformBroadcaster pose_bc_;
+  tf::Transform pose_tf_;
 
-  geometry_msgs::Pose2D pose_;
-  geometry_msgs::Pose2D ref_pose_;
+  std::string world_frame_;
+  std::string child_frame_;
+
   geometry_msgs::Twist controls_;
-  geometry_msgs::Twist scaled_controls_;
-  obstacle_detector::Obstacles obstacles_;
-
-  std::vector<double> t_;
-  std::vector<geometry_msgs::Pose2D> pose_list_;
-  std::vector<geometry_msgs::Twist> controls_list_;
-  std::vector<geometry_msgs::Twist> scaled_controls_list_;
-
-  bool use_yaml_;
-  bool use_txt_;
+  geometry_msgs::Pose2D odom_pose_;
+  geometry_msgs::Pose2D optitrack_pose_;
+  geometry_msgs::Pose2D pose_;
+  geometry_msgs::Twist velocity_;
 
   int loop_rate_;
-  bool recording_data_;
+  bool state_estimator_active_;
 };
 
 } // namespace mtracker
 
-#endif // DATA_RECORDER_H
+#endif // STATE_ESTIMATOR_H

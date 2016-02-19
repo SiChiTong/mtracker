@@ -47,5 +47,9 @@ add_executable(controls_scaling src/controls_scaling.cpp include/controls_scalin
 target_link_libraries(controls_scaling ${catkin_LIBRARIES})
 add_dependencies(controls_scaling ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
+add_executable(state_estimator src/state_estimator.cpp include/state_estimator.h)
+target_link_libraries(state_estimator ${catkin_LIBRARIES})
+add_dependencies(state_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
 add_executable(data_recorder src/data_recorder.cpp include/data_recorder.h)
 target_link_libraries(data_recorder ${catkin_LIBRARIES})# libyaml-cpp.a)
