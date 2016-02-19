@@ -49,8 +49,8 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
     if (recording_data_) {
       double t = (start_mark_ - ros::Time::now()).toSec();
       t_.push_back(t);
-      pose_list_.push_back(latest_pose_);
-      controls_list_.push_back(latest_controls_);
+      pose_list_.push_back(pose_);
+      controls_list_.push_back(controls_);
     }
 
     rate.sleep();
@@ -96,11 +96,11 @@ void DataRecorder::initialize() {
 }
 
 void DataRecorder::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose) {
-  latest_pose_ = *pose;
+  pose_ = *pose;
 }
 
 void DataRecorder::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls) {
-  latest_controls_ = *controls;
+  controls_ = *controls;
 }
 
 bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {
@@ -125,7 +125,7 @@ bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::R
 }
 
 void DataRecorder::emitYamlFile() {
-  static int file_number = 0;
+/*  static int file_number = 0;
   ++file_number;
   YAML::Emitter emitter;
 
@@ -157,7 +157,7 @@ void DataRecorder::emitYamlFile() {
   std::ofstream file(filename);
 
   file << emitter.c_str();
-  file.close();
+  file.close();*/
 }
 
 void DataRecorder::emitTxtFile() {

@@ -90,6 +90,15 @@ void Simulator::initialize() {
   if (!nh_local_.getParam("child_frame", child_frame_))
     child_frame_ = "virtual";
 
+  if (!nh_local_.getParam("initial_x", pose_.x))
+    pose_.x = 0.0;
+
+  if (!nh_local_.getParam("initial_y", pose_.y))
+    pose_.y = 0.0;
+
+  if (!nh_local_.getParam("initial_theta", pose_.theta))
+    pose_.theta = 0.0;
+
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &Simulator::controlsCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);

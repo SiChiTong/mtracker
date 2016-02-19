@@ -37,7 +37,7 @@
 #define DATA_RECORDER_H
 
 #include <boost/filesystem.hpp>
-#include <yaml-cpp/yaml.h>
+//#include <yaml-cpp/yaml.h>
 #include <vector>
 #include <fstream>
 #include <string>
@@ -76,12 +76,13 @@ private:
   ros::Subscriber obstacles_sub_;
   ros::ServiceServer trigger_srv_;
 
-  // Recorder variables
+  // Data recorder variables
   ros::Time start_mark_;
 
-  geometry_msgs::Pose2D latest_pose_;
-  geometry_msgs::Twist latest_controls_;
-  obstacle_detector::Obstacles latest_obstacles_;
+  geometry_msgs::Pose2D pose_;
+  geometry_msgs::Pose2D ref_pose_;
+  geometry_msgs::Twist controls_;
+  obstacle_detector::Obstacles obstacles_;
 
   std::vector<double> t_;
   std::vector<geometry_msgs::Pose2D> pose_list_;

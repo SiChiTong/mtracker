@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export ROS_MASTER_URI=http://MTracker:11311
 export ROS_IP=MTracker
