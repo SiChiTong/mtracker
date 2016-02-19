@@ -117,7 +117,7 @@ double ObstacleController::getBeta() {
 }
 
 vec ObstacleController::getGradBetaWorld() {
-  vec gradB_0 = {0.0, 0.0, 0.0};
+  vec gradB_0 = vec(3);
 
   gradB_0(0) = -2.0 * (pose_.x - world_.x);
   gradB_0(1) = -2.0 * (pose_.y - world_.y);
@@ -127,7 +127,7 @@ vec ObstacleController::getGradBetaWorld() {
 }
 
 vec ObstacleController::getGradBeta_i(Obstacle o) {
-  vec gradB_i = {0.0, 0.0, 0.0};
+  vec gradB_i = vec(3);
 
   gradB_i(0) = 2.0 * (pose_.x - o.x);
   gradB_i(1) = 2.0 * (pose_.y - o.y);
@@ -138,8 +138,8 @@ vec ObstacleController::getGradBeta_i(Obstacle o) {
 
 vec ObstacleController::getGradBeta() {
   // gradB = gradB0 * B1 * B2 * ... * Bn + B0 * gradB1 * B2 * ... * Bn + ... + B0 * B1 * B2 * ... * gradBn
-  vec gradB = {0.0, 0.0, 0.0};       // Total gradient
-  vec grad_part = {0.0, 0.0, 0.0};   // Part of gradient
+  vec gradB = vec(3);        // Total gradient
+  vec grad_part = vec(3);    // Part of gradient
 
   // First factor: gradB0 * B1 * B2 * ... * Bn
   grad_part = getGradBetaWorld();
@@ -180,8 +180,8 @@ double ObstacleController::getV() {
 }
 
 vec ObstacleController::getGradV() {
-  vec gradV = {0.0, 0.0, 0.0};
-  vec gradB = {0.0, 0.0, 0.0};
+  vec gradV = vec(3); // = {0.0, 0.0, 0.0};
+  vec gradB = vec(3); // = {0.0, 0.0, 0.0};
 
   double i_kappa = 1.0 / kappa_;
 
@@ -215,16 +215,17 @@ vec ObstacleController::getGradV() {
 void ObstacleController::computeControls() {
   double b, h, g;   // Variable parameters
 
-  mat B = mat(3, 2).zeros();    // Input matrix
-  vec L = {0.0, 0.0, 0.0};      // [sin(fi) -cos(fi) 0]^T
-  vec gradV = {0.0, 0.0, 0.0};  // Gradient of navigation function
-  vec u_p = {0.0, 0.0};    // Control signals time derivative
-  vec u = {0.0, 0.0};      // Control signals
+  mat B = mat(3, 2).zeros();   // Input matrix
+  vec L = vec(3).zeros();      // [sin(fi) -cos(fi) 0]^T
+  vec gradV = vec(3).zeros();  // Gradient of navigation function
+  vec u_p = vec(2).zeros();    // Control signals time derivative
+  vec u = vec(2).zeros();      // Control signals
 
   // Auxiliary matrices
   arma::mat I = eye<mat>(2, 2);
-  arma::mat J = { { 0.0, 1.0},
-                  {-1.0, 0.0} };
+  arma::mat J = mat(2, 2).zeros();
+  J <<  0.0 << 1.0 << endr
+    << -1.0 << 0.0 << endr;
 
   // Update input matrix
   B(0, 0) = cos(pose_.theta);
@@ -263,10 +264,24 @@ void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
 void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg) {
   obstacles_.clear();
 
+  vec p_l = vec(2);   // Point coordinates in local frame
+  vec p_g = vec(2);   // Point coordinates in global frame
+  vec dp = vec(2);    // Translation between local and global frame
+  dp << pose_.x << pose_.y;
+
+  mat R = mat(2, 2);
+  R <<  cos(pose_.theta) << sin(pose_.theta) << endr
+    << -sin(pose_.theta) << cos(pose_.theta) << endr;
+
   Obstacle o;
   for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-    o.x = obstacles_msg->centre_points[i].x;
-    o.y = obstacles_msg->centre_points[i].y;
+    p_l(0) = obstacles_msg->centre_points[i].x;
+    p_l(1) = obstacles_msg->centre_points[i].y;
+
+    p_g = R * p_l + dp;
+
+    o.x = p_g(0);
+    o.y = p_g(1);
     o.r = obstacles_msg->radii[i];
 
     obstacles_.push_back(o);

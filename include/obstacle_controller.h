@@ -36,6 +36,8 @@
 #ifndef OBSTACLE_CONTROLLER_H
 #define OBSTACLE_CONTROLLER_H
 
+#define ARMA_DONT_USE_CXX11
+
 #include <armadillo>
 #include <vector>
 
