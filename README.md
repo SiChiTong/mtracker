@@ -3,13 +3,14 @@
 The mtracker package contains several nodes which serve as an interface for MTracker users. MTracker is a two-wheeled miniature mobile robot designed and produced at Chair of Control and Systems Engineering of Poznan University of Technology. For graphical user interface check mtracker_gui package.
 
 This readme is organized as follows:
-[1. The nodes](#nodes)
-[2. The launch files](#launch)
-[3. The global parameters](#globals)
-[4. The local parameters](#globals)
-[5. The scripts](#scripts)
+* [1. The nodes](nodes)
+* [2. The launch files](launches)
+* [3. The global parameters](globals)
+* [4. The local parameters](locals)
+* [5. The scripts](scripts)
 
-#### <a name="nodes"></a>1. The nodes
+[nodes]:
+#### 1. The nodes
 
 The nodes are supposed to work on the on-board computer of MTracker. They use standard ros messages, e.g. `geometry_msgs/Pose2D` for pose and `geometry_msg/Twist` for velocities and control signals. The names of the topics are configured by the global parameters (see below). The package contains following nodes: 
 
@@ -23,14 +24,16 @@ The nodes are supposed to work on the on-board computer of MTracker. They use st
 * `controls_scaling` - a limiter of the control signals. The algorithm scales the values of control signals so that the control vector preserves its orientation.
 * `data_recorder` - a collector of all available signals which can record them and save to .txt or .yaml file.
 
-#### <a name="launch"></a>2. The launch files
+[launches]:
+#### 2. The launch files
 
 In order to simplify the process of starting off the nodes, two example launch files have been prepared. Each of them starts the RViz with preconfigured environment using mtracker_gui. The package contains the following launch files:
 
 * `mtracker` - configures network variables and starts all of the nodes. The roscore is assumed to work on the MTracker on-board computer therefor it must be a'priori started off.
 * `simulator` - starts all of the nodes needed for the off-line, simulation-only work.
 
-#### <a name="globals"></a>3. The global parameters
+[globals]:
+#### 3. The global parameters
 
 The nodes use a collection of global parameters which help to keep the topics names consistent. The global parameters are (square brackets enclose default value):
 
@@ -54,7 +57,8 @@ The nodes use a collection of global parameters which help to keep the topics na
 * `optitrack_pose_topic` [optitrack_pose] - topic of pose messages obtained from the `mocap_optitrack` package if used.
 * `obstacles_topic` [obstacles] - topic of obstacles messages obtained from the `obstacle_detector` package if used.
 
-#### <a name="locals"></a> 4. The local parameters
+[locals]:
+#### 4. The local parameters
 
 Most of the nodes use additional local parameters that can define their behavior. The local parameters are (square brackets enclose default value):
 child_frame
@@ -86,7 +90,8 @@ child_frame
     * `use_txt` [true] - if true, save data to .txt file.
     * `use_yaml` [false] - if true, save data to .yaml file.
 
-#### <a name="scripts"></a> 5. The scripts
+[scripts]:
+#### 5. The scripts
 
 Two shell scripts have been prepared for updating and starting the mtracker off.
 
