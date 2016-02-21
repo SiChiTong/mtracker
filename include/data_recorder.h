@@ -44,10 +44,11 @@
 #include <ctime>
 
 #include <ros/ros.h>
-#include <mtracker/Trigger.h>
-#include <obstacle_detector/Obstacles.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
+#include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
+#include <obstacle_detector/Obstacles.h>
 
 namespace mtracker {
 
@@ -59,6 +60,7 @@ public:
 
 private:
   void initialize();
+  void addLatestData();
   void emitYamlFile();
   void emitTxtFile();
 
@@ -67,8 +69,8 @@ private:
   void scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
   bool trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res);
+  bool updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res);
 
-  // ROS handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
@@ -77,15 +79,15 @@ private:
   ros::Subscriber scaled_controls_sub_;
   ros::Subscriber obstacles_sub_;
   ros::ServiceServer trigger_srv_;
-
-  // Data recorder variables
-  ros::Time start_mark_;
+  ros::ServiceServer params_srv_;
 
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Pose2D ref_pose_;
   geometry_msgs::Twist controls_;
   geometry_msgs::Twist scaled_controls_;
   obstacle_detector::Obstacles obstacles_;
+
+  ros::Time start_mark_;
 
   std::vector<double> t_;
   std::vector<geometry_msgs::Pose2D> pose_list_;

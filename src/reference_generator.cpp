@@ -93,25 +93,20 @@ void ReferenceGenerator::initialize() {
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic + "_stamped", 10);
-  play_pause_srv_ = nh_.advertiseService("reference_play_pause_srv", &ReferenceGenerator::playPause, this);
   trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
+  params_srv_ = nh_.advertiseService("reference_generator_params_srv", &ReferenceGenerator::updateParams, this);
 
   switch (trajectory_type) {
     case 0:
-      trajectory_ = new Trajectory(2.0, -1.0, -M_PI_4);
-      break;
+      trajectory_ = new Trajectory(2.0, -1.0, -M_PI_4); break;
     case 1:
-      trajectory_ = new LinearTrajectory(0.1, M_PI_4);
-      break;
+      trajectory_ = new LinearTrajectory(0.1, M_PI_4); break;
     case 2:
-      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1);
-      break;
+      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1); break;
     case 3:
-      trajectory_ = new LemniscateTrajectory();
-      break;
+      trajectory_ = new LemniscateTrajectory(); break;
     default:
-      trajectory_ = new Trajectory();
-      break;
+      trajectory_ = new Trajectory(0.0, 0.0, 0.0); break;
   }
 
   update(0.0);
@@ -157,19 +152,19 @@ void ReferenceGenerator::publish() {
   pose_stamped_pub_.publish(pose);
 }
 
-bool ReferenceGenerator::playPause(mtracker::PlayPause::Request &req, mtracker::PlayPause::Response &res) {
-  if (req.play)
+bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  reference_generator_active_ = req.activate;
+  return true;
+}
+
+bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+  if (req.params[0])
     start();
-  else if (req.pause)
+  else if (req.params[1])
     pause();
   else
     stop();
 
-  return true;
-}
-
-bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
-  reference_generator_active_ = req.activate;
   return true;
 }
 

@@ -104,6 +104,7 @@ void Simulator::initialize() {
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(virtual_pose_topic + "_stamped", 10);
   trigger_srv_ = nh_.advertiseService("simulator_trigger_srv", &Simulator::trigger, this);
+  params_srv_ = nh_.advertiseService("simulator_params_srv", &Simulator::updateParams, this);
 }
 
 void Simulator::computeVelocity() {
@@ -142,6 +143,10 @@ void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_
 
 bool Simulator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   simulator_active_ = req.activate;
+  return true;
+}
+
+bool Simulator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
   return true;
 }
 

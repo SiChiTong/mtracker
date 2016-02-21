@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-StateEstimator::StateEstimator() : nh_(""), nh_local_("~"), state_estimator_active_(true) {
+StateEstimator::StateEstimator() : nh_(""), nh_local_("~"), state_estimator_active_(false) {
   initialize();
 
   ROS_INFO("Automatic controller [OK]");
@@ -97,6 +97,7 @@ void StateEstimator::initialize() {
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(pose_topic + "_stamped", 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(velocity_topic, 10);
   trigger_srv_ = nh_.advertiseService("state_estimator_trigger_srv", &StateEstimator::trigger, this);
+  params_srv_ = nh_.advertiseService("state_estimator_params_srv", &StateEstimator::updateParams, this);
 }
 
 void StateEstimator::estimateState() {
@@ -132,11 +133,17 @@ void StateEstimator::odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
 }
 
 void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
-  optitrack_pose_ = *pose_msg;
+  optitrack_pose_.x =  pose_msg->y;
+  optitrack_pose_.y = -pose_msg->x;
+  optitrack_pose_.theta = pose_msg->theta;
 }
 
 bool StateEstimator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   state_estimator_active_ = req.activate;
+  return true;
+}
+
+bool StateEstimator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
   return true;
 }
 

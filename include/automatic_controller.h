@@ -40,6 +40,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 namespace mtracker
 {
@@ -58,6 +59,7 @@ private:
   void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg);
   void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -68,6 +70,7 @@ private:
   ros::Subscriber ref_velocity_sub_;
   ros::Publisher controls_pub_;
   ros::ServiceServer trigger_srv_;
+  ros::ServiceServer params_srv_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;

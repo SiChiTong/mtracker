@@ -95,7 +95,7 @@ void ObstacleController::initialize() {
   obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic, 10, &ObstacleController::obstaclesCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
   trigger_srv_ = nh_.advertiseService("obstacle_controller_trigger_srv", &ObstacleController::trigger, this);
-  update_params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
+  params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
 }
 
 double ObstacleController::getBetaWorld() {
@@ -248,10 +248,7 @@ void ObstacleController::computeControls() {
     b = 0.0;
 
   // Calculate control signals time derivatives
-  u_p = -(a_ * I + b * J) * trans(B) * gradV;
-
-  // Integrate to control signals
-  u += u_p / static_cast<double>(loop_rate_);
+  u = -(a_ * I + b * J) * trans(B) * gradV;
 
   controls_.linear.x = u(0);
   controls_.angular.z = u(1);
@@ -280,27 +277,35 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
 
     p_g = R * p_l + dp;
 
-    o.x = p_g(0);
-    o.y = p_g(1);
-    o.r = obstacles_msg->radii[i];
+    if (p_g(0) >= -0.7 && p_g(0) <= 3.0 && p_g(1) >= -0.6 && p_g(1) <= 2.0) {
+      o.x = p_g(0);
+      o.y = p_g(1);
+      o.r = obstacles_msg->radii[i];
 
-    obstacles_.push_back(o);
+      obstacles_.push_back(o);
+    }
   }
 }
 
 bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   obstacle_controller_active_ = req.activate;
+
+  if (!obstacle_controller_active_) {
+    controls_.linear.x = 0.0;
+    controls_.angular.z = 0.0;
+    controls_pub_.publish(controls_);
+  }
+
   return true;
 }
 
-bool ObstacleController::updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res) {
-  if (req.kappa >= 0.0 && req.epsilon >= 0.0 && req.k_w >= 0.0 && req.b_ >= 0.0 && req.a >= 0.0) {
-    kappa_ = req.kappa;
-    epsilon_ = req.epsilon;
-    k_w_ = req.k_w;
-    b_dash_ = req.b_;
-    a_ = req.a;
-
+bool ObstacleController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+  if (req.params[0] >= 0.0 && req.params[1] >= 0.0 && req.params[2] >= 0.0 && req.params[3] >= 0.0 && req.params[4] >= 0.0) {
+    kappa_ = req.params[0];
+    epsilon_ = req.params[1];
+    k_w_ = req.params[2];
+    b_dash_ = req.params[3];
+    a_ = req.params[4];
     return true;
   }
   else

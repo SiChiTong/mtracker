@@ -86,6 +86,7 @@ void AutomaticController::initialize() {
   ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(reference_velocity_topic, 10, &AutomaticController::refVelocityCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
   trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &AutomaticController::trigger, this);
+  params_srv_ = nh_.advertiseService("automatic_controller_params_srv", &AutomaticController::updateParams, this);
 }
 
 void AutomaticController::computeControls() {
@@ -126,6 +127,17 @@ void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstP
 
 bool AutomaticController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   automatic_controller_active_ = req.activate;
+
+  if (!automatic_controller_active_) {
+    controls_.linear.x = 0.0;
+    controls_.angular.z = 0.0;
+    controls_pub_.publish(controls_);
+  }
+
+  return true;
+}
+
+bool AutomaticController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
   return true;
 }
 

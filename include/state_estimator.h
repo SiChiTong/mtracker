@@ -40,8 +40,9 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <mtracker/Trigger.h>
 #include <tf/transform_broadcaster.h>
+#include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 namespace mtracker
 {
@@ -61,6 +62,7 @@ private:
   void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -72,6 +74,7 @@ private:
   ros::Publisher pose_stamped_pub_;
   ros::Publisher velocity_pub_;
   ros::ServiceServer trigger_srv_;
+  ros::ServiceServer params_srv_;
 
   tf::TransformBroadcaster pose_bc_;
   tf::Transform pose_tf_;

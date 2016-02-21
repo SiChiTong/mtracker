@@ -3,7 +3,8 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /TF1/Frames1
       Splitter Ratio: 0.624535
     Tree Height: 356
   - Class: rviz/Selection
@@ -66,8 +67,8 @@ Visualization Manager:
       Frame Timeout: 9999
       Frames:
         All Enabled: false
-        optitrack:
-          Value: false
+        odometry:
+          Value: true
         robot:
           Value: true
         scanner:
@@ -81,7 +82,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          optitrack:
+          odometry:
             {}
           robot:
             scanner:
@@ -114,7 +115,8 @@ Visualization Manager:
       Marker Topic: /obstacle_markers
       Name: Obstacles
       Namespaces:
-        {}
+        circles: true
+        segments: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -162,7 +164,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: -1.595
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
@@ -171,7 +173,7 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 250.633
+      Scale: 211.166
       Target Frame: world
       Value: TopDownOrtho (rviz)
       X: 0

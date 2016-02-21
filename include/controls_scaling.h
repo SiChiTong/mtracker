@@ -38,8 +38,8 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
-#include <mtracker/MaxWheelRate.h>
 #include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 namespace mtracker
 {
@@ -57,7 +57,7 @@ private:
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateMaxWheelRate(mtracker::MaxWheelRate::Request &req, mtracker::MaxWheelRate::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -65,10 +65,11 @@ private:
   ros::Subscriber controls_sub_;
   ros::Publisher controls_pub_;
   ros::ServiceServer trigger_srv_;
-  ros::ServiceServer max_wheel_rate_srv_;
+  ros::ServiceServer params_srv_;
+
+  double max_wheel_rate_;
 
   bool controls_scaling_active_;
-  double max_wheel_rate_;
 };
 
 } // namespace mtracker

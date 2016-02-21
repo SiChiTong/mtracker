@@ -40,7 +40,7 @@
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
 #include <mtracker/Trigger.h>
-#include <mtracker/ManualGains.h>
+#include <mtracker/Params.h>
 
 namespace mtracker
 {
@@ -56,7 +56,7 @@ private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
   void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateManualGains(mtracker::ManualGains::Request &req, mtracker::ManualGains::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -65,7 +65,7 @@ private:
   ros::Subscriber keys_sub_;
   ros::Publisher controls_pub_;
   ros::ServiceServer trigger_srv_;
-  ros::ServiceServer manual_gains_srv_;
+  ros::ServiceServer params_srv_;
 
   geometry_msgs::Twist controls_;
 

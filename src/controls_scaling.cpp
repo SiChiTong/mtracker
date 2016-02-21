@@ -60,7 +60,7 @@ void ControlsScaling::initialize() {
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &ControlsScaling::controlsCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(scaled_controls_topic, 10);
   trigger_srv_ = nh_.advertiseService("controls_scaling_trigger_srv", &ControlsScaling::trigger, this);
-  max_wheel_rate_srv_ = nh_.advertiseService("max_wheel_rate_srv", &ControlsScaling::updateMaxWheelRate, this);
+  params_srv_ = nh_.advertiseService("controls_scaling_params_srv", &ControlsScaling::updateParams, this);
 }
 
 void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
@@ -94,9 +94,9 @@ bool ControlsScaling::trigger(mtracker::Trigger::Request &req, mtracker::Trigger
   return true;
 }
 
-bool ControlsScaling::updateMaxWheelRate(mtracker::MaxWheelRate::Request &req, mtracker::MaxWheelRate::Response &res) {
-  if (req.max_wheel_rate >= 0.0) {
-    max_wheel_rate_ = req.max_wheel_rate;
+bool ControlsScaling::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+  if (req.params[0] >= 0.0) {
+    max_wheel_rate_ = req.params[0];
     return true;
   }
   else

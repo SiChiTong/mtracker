@@ -45,7 +45,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <mtracker/Trigger.h>
-#include <mtracker/ObstacleControllerParams.h>
+#include <mtracker/Params.h>
 #include <obstacle_detector/Obstacles.h>
 
 namespace mtracker
@@ -79,7 +79,7 @@ private:
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateParams(mtracker::ObstacleControllerParams::Request &req, mtracker::ObstacleControllerParams::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -88,7 +88,7 @@ private:
   ros::Subscriber obstacles_sub_;
   ros::Publisher controls_pub_;
   ros::ServiceServer trigger_srv_;
-  ros::ServiceServer update_params_srv_;
+  ros::ServiceServer params_srv_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;

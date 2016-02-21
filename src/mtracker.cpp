@@ -110,6 +110,7 @@ void MTracker::initialize() {
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
   pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(odom_pose_topic + "_stamped", 10);
   trigger_srv_ = nh_.advertiseService("mtracker_trigger_srv", &MTracker::trigger, this);
+  params_srv_ = nh_.advertiseService("mtracker_params_srv", &MTracker::updateParams, this);
 }
 
 void MTracker::transferData() {
@@ -154,6 +155,15 @@ void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_m
 
 bool MTracker::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   mtracker_active_ = req.activate;
+
+  if (!mtracker_active_) {
+    com_->setVelocities(0.0, 0.0);
+  }
+
+  return true;
+}
+
+bool MTracker::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
   return true;
 }
 

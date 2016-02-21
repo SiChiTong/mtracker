@@ -68,7 +68,7 @@ void ManualController::initialize() {
   keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
   trigger_srv_ = nh_.advertiseService("manual_controller_trigger_srv", &ManualController::trigger, this);
-  manual_gains_srv_ = nh_.advertiseService("manual_gains_srv", &ManualController::updateManualGains, this);
+  params_srv_ = nh_.advertiseService("manual_controller_params_srv", &ManualController::updateParams, this);
 }
 
 void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
@@ -89,13 +89,20 @@ void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_m
 
 bool ManualController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   manual_control_active_ = req.activate;
+
+  if (!manual_control_active_) {
+    controls_.linear.x = 0.0;
+    controls_.angular.z = 0.0;
+    controls_pub_.publish(controls_);
+  }
+
   return true;
 }
 
-bool ManualController::updateManualGains(mtracker::ManualGains::Request &req, mtracker::ManualGains::Response &res) {
-  if (req.k_v >= 0.0 && req.k_w >= 0.0) {
-    k_v_ = req.k_v;
-    k_w_ = req.k_w;
+bool ManualController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+  if (req.params[0] >= 0.0 && req.params[1] >= 0.0) {
+    k_v_ = req.params[0];
+    k_w_ = req.params[1];
     return true;
   }
   else

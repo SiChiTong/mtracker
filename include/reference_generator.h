@@ -40,9 +40,9 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <mtracker/Trigger.h>
-#include <mtracker/PlayPause.h>
 #include <tf/transform_broadcaster.h>
+#include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 #include "../include/trajectories.h"
 
@@ -64,7 +64,7 @@ private:
   void publish();
 
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool playPause(mtracker::PlayPause::Request &req, mtracker::PlayPause::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -73,7 +73,7 @@ private:
   ros::Publisher velocity_pub_;
   ros::Publisher pose_stamped_pub_;
   ros::ServiceServer trigger_srv_;
-  ros::ServiceServer play_pause_srv_;
+  ros::ServiceServer params_srv_;
 
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;

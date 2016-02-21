@@ -47,11 +47,7 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
     ros::spinOnce();
 
     if (recording_data_) {
-      double t = (start_mark_ - ros::Time::now()).toSec();
-      t_.push_back(t);
-      pose_list_.push_back(pose_);
-      controls_list_.push_back(controls_);
-      scaled_controls_list_.push_back(scaled_controls_);
+      addLatestData();
     }
 
     rate.sleep();
@@ -95,44 +91,19 @@ void DataRecorder::initialize() {
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &DataRecorder::controlsCallback, this);
   scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &DataRecorder::scaledControlsCallback, this);
   trigger_srv_ = nh_.advertiseService("data_recorder_trigger_srv", &DataRecorder::trigger, this);
+  params_srv_ = nh_.advertiseService("data_recorder_params_srv", &DataRecorder::updateParams, this);
 
   std::string username = getenv("USER");
   std::string folder = "/home/" + username + "/MTrackerRecords/";
   boost::filesystem::create_directories(folder);
 }
 
-void DataRecorder::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
-  pose_ = *pose_msg;
-}
-
-void DataRecorder::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
-  controls_ = *controls_msg;
-}
-
-void DataRecorder::scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
-  scaled_controls_ = *controls_msg;
-}
-
-bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {
-  if (req.activate && !recording_data_) {
-    t_.clear();
-    pose_list_.clear();
-    controls_list_.clear();
-    scaled_controls_list_.clear();
-
-    recording_data_ = true;
-    start_mark_ = ros::Time::now();
-  }
-  else if (!req.activate && recording_data_) {
-    recording_data_ = false;
-
-    if (use_txt_)
-      emitTxtFile();
-    if (use_yaml_)
-      emitYamlFile();
-  }
-
-  return true;
+void DataRecorder::addLatestData() {
+  double t = (start_mark_ - ros::Time::now()).toSec();
+  t_.push_back(t);
+  pose_list_.push_back(pose_);
+  controls_list_.push_back(controls_);
+  scaled_controls_list_.push_back(scaled_controls_);
 }
 
 void DataRecorder::emitYamlFile() {
@@ -187,6 +158,44 @@ void DataRecorder::emitTxtFile() {
   }
 
   file.close();
+}
+
+void DataRecorder::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
+  pose_ = *pose_msg;
+}
+
+void DataRecorder::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  controls_ = *controls_msg;
+}
+
+void DataRecorder::scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  scaled_controls_ = *controls_msg;
+}
+
+bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {
+  if (req.activate && !recording_data_) {
+    t_.clear();
+    pose_list_.clear();
+    controls_list_.clear();
+    scaled_controls_list_.clear();
+
+    recording_data_ = true;
+    start_mark_ = ros::Time::now();
+  }
+  else if (!req.activate && recording_data_) {
+    recording_data_ = false;
+
+    if (use_txt_)
+      emitTxtFile();
+    if (use_yaml_)
+      emitYamlFile();
+  }
+
+  return true;
+}
+
+bool DataRecorder::updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res) {
+  return true;
 }
 
 int main(int argc, char** argv) {
