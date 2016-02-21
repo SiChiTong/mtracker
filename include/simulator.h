@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef SIMULATOR_H
-#define SIMULATOR_H
+#pragma once
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
@@ -90,5 +89,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // SIMULATOR_H

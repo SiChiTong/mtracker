@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef DATA_RECORDER_H
-#define DATA_RECORDER_H
+#pragma once
 
 #include <boost/filesystem.hpp>
 //#include <yaml-cpp/yaml.h>
@@ -102,5 +101,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // DATA_RECORDER_H

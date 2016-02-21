@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef SERIAL_H
-#define SERIAL_H
+#pragma once
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
@@ -230,5 +229,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // SERIAL_H

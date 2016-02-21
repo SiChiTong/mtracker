@@ -100,7 +100,7 @@ void ReferenceGenerator::initialize() {
     case 0:
       trajectory_ = new Trajectory(2.0, -1.0, -M_PI_4); break;
     case 1:
-      trajectory_ = new LinearTrajectory(0.1, M_PI_4); break;
+      trajectory_ = new LinearTrajectory(M_PI_4, 0.1); break;
     case 2:
       trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1); break;
     case 3:
@@ -127,9 +127,21 @@ void ReferenceGenerator::pause() {
 }
 
 void ReferenceGenerator::update(double dt) {
+  double prev_theta = pose_.theta;
+  double prev_theta_aux = atan2(sin(pose_.theta), cos(pose_.theta));
+
   time_ += dt;
   pose_ = trajectory_->calculatePose(time_);
   velocity_ = trajectory_->calculateVelocity(time_);
+
+//  double new_theta = pose_.theta;
+  double new_theta_aux = atan2(sin(pose_.theta), cos(pose_.theta));
+  double theta_diff = new_theta_aux - prev_theta_aux;
+
+  if (theta_diff < -M_PI)
+    pose_.theta = prev_theta + theta_diff + 2.0 * M_PI;
+  else if (theta_diff > M_PI)
+    pose_.theta = prev_theta + theta_diff - 2.0 * M_PI;
 }
 
 void ReferenceGenerator::publish() {
@@ -164,6 +176,26 @@ bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::
     pause();
   else
     stop();
+
+  if (req.params[2]) {                // Change trajectory
+    if (req.params[3] == 0.0) {       // Point trajectory
+      delete trajectory_;
+      trajectory_ = new Trajectory(req.params[4], req.params[5], req.params[6]);    // x, y, phi
+    }
+    else if (req.params[3] == 1.0) {    // Linear trajectory
+      delete trajectory_;
+      trajectory_ = new LinearTrajectory(req.params[4], req.params[5], req.params[6], req.params[7]); // x, y, phi, v
+    }
+    else if (req.params[3] == 2.0) {    // Harmonic trajectory
+      delete trajectory_;
+      trajectory_ = new HarmonicTrajectory(req.params[4], req.params[5], req.params[6], req.params[7],
+          req.params[8], req.params[9], req.params[10]); // x, y, T, Rx, Ry, nx, ny
+    }
+    else if (req.params[3] == 3.0) {    // Lemniscate trajectory
+      delete trajectory_;
+      trajectory_ = new LemniscateTrajectory();
+    }
+  }
 
   return true;
 }

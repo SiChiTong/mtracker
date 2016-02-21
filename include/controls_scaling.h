@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef CONTROLS_SCALING_H
-#define CONTROLS_SCALING_H
+#pragma once
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
@@ -73,5 +72,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // CONTROLS_SCALING_H

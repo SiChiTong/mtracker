@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef STATE_ESTIMATOR_H
-#define STATE_ESTIMATOR_H
+#pragma once
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
@@ -93,5 +92,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // STATE_ESTIMATOR_H

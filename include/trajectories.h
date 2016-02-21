@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef TRAJECTORIES_H
-#define TRAJECTORIES_H
+#pragma once
 
 #include <cmath>
 #include <geometry_msgs/Pose2D.h>
@@ -83,31 +82,30 @@ protected:
 class LinearTrajectory : public Trajectory
 {
 public:
-  LinearTrajectory() : v_(0.0), phi_(0.0) {}
-  LinearTrajectory(double v, double phi) : v_(v), phi_(phi) {}
-  LinearTrajectory(double x, double y, double v, double phi) : Trajectory(x, y, phi), v_(v), phi_(phi) {}
+  LinearTrajectory() : v_(0.0) {}
+  LinearTrajectory(double phi, double v) : Trajectory(0.0, 0.0, phi), v_(v) {}
+  LinearTrajectory(double x, double y, double phi, double v) : Trajectory(x, y, phi), v_(v) {}
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
-    pose.x = x_0_ + v_ * cos(phi_) * t;
-    pose.y = y_0_ + v_ * sin(phi_) * t;
-    pose.theta = phi_;
+    pose.x = x_0_ + v_ * cos(phi_0_) * t;
+    pose.y = y_0_ + v_ * sin(phi_0_) * t;
+    pose.theta = phi_0_;
 
     return pose;
   }
 
   virtual geometry_msgs::Twist calculateVelocity(double t) {
     geometry_msgs::Twist velocity;
-    velocity.linear.x = v_ * cos(phi_);
-    velocity.linear.y = v_ * sin(phi_);
+    velocity.linear.x = v_ * cos(phi_0_);
+    velocity.linear.y = v_ * sin(phi_0_);
     velocity.angular.z = 0.0;
 
     return velocity;
   }
 
 protected:
-  double v_;         // Velocity [m/s]
-  double phi_;       // Orientation [rad]
+  double v_;       // Velocity [m/s]
 };
 
 
@@ -183,5 +181,3 @@ protected:
 };
 
 } // namespace mtracker
-
-#endif // TRAJECTORIES_H

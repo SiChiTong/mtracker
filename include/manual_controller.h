@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef MANUAL_CONTROLLER_H
-#define MANUAL_CONTROLLER_H
+#pragma once
 
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
@@ -76,5 +75,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // MANUAL_CONTROLLER_H

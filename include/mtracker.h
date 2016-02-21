@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef MTRACKER_H
-#define MTRACKER_H
+#pragma once
 
 #include <signal.h>
 #include <memory>
@@ -98,5 +97,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // MTRACKER_H

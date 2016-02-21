@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla and Wojciech Kowalczyk
  */
 
-#ifndef OBSTACLE_CONTROLLER_H
-#define OBSTACLE_CONTROLLER_H
+#pragma once
 
 #define ARMA_DONT_USE_CXX11
 
@@ -103,5 +102,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // OBSTACLE_CONTROLLER_H

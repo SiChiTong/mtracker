@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef AUTOMATIC_CONTROLLER_H
-#define AUTOMATIC_CONTROLLER_H
+#pragma once
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
@@ -83,5 +82,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // AUTOMATIC_CONTROLLER_H
