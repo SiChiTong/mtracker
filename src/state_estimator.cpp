@@ -40,7 +40,7 @@ using namespace mtracker;
 StateEstimator::StateEstimator() : nh_(""), nh_local_("~"), state_estimator_active_(false) {
   initialize();
 
-  ROS_INFO("Automatic controller [OK]");
+  ROS_INFO("State estimator [OK]");
 
   ros::Rate rate(loop_rate_);
 
@@ -133,8 +133,8 @@ void StateEstimator::odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
 }
 
 void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
-  optitrack_pose_.x =  pose_msg->y;
-  optitrack_pose_.y = -pose_msg->x;
+  optitrack_pose_.x =  pose_msg->y - X_OFFSET;
+  optitrack_pose_.y = -pose_msg->x - Y_OFFSET;
   optitrack_pose_.theta = pose_msg->theta;
 }
 

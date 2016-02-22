@@ -170,6 +170,7 @@ bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trig
 }
 
 bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+  // The parameters come as: [start, pause, update_params, trajectory_type, x, y, theta, v, T, Rx, Ry, nx, ny]
   if (req.params[0])
     start();
   else if (req.params[1])
@@ -177,19 +178,19 @@ bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::
   else
     stop();
 
-  if (req.params[2]) {                // Change trajectory
-    if (req.params[3] == 0.0) {       // Point trajectory
+  if (req.params[2]) {
+    if (req.params[3] == 0.0) {         // Point trajectory
       delete trajectory_;
-      trajectory_ = new Trajectory(req.params[4], req.params[5], req.params[6]);    // x, y, phi
+      trajectory_ = new Trajectory(req.params[4], req.params[5], req.params[6]);
     }
     else if (req.params[3] == 1.0) {    // Linear trajectory
       delete trajectory_;
-      trajectory_ = new LinearTrajectory(req.params[4], req.params[5], req.params[6], req.params[7]); // x, y, phi, v
+      trajectory_ = new LinearTrajectory(req.params[4], req.params[5], req.params[6], req.params[7]);
     }
     else if (req.params[3] == 2.0) {    // Harmonic trajectory
       delete trajectory_;
-      trajectory_ = new HarmonicTrajectory(req.params[4], req.params[5], req.params[6], req.params[7],
-          req.params[8], req.params[9], req.params[10]); // x, y, T, Rx, Ry, nx, ny
+      trajectory_ = new HarmonicTrajectory(req.params[4], req.params[5], req.params[8], req.params[9],
+          req.params[10], req.params[11], req.params[12]);
     }
     else if (req.params[3] == 3.0) {    // Lemniscate trajectory
       delete trajectory_;

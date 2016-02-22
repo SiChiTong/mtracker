@@ -35,6 +35,9 @@
 
 #pragma once
 
+#define X_OFFSET 2.2
+#define Y_OFFSET 0.8
+
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
