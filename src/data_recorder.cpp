@@ -79,7 +79,7 @@ void DataRecorder::initialize() {
 
   std::string scaled_controls_topic;
   if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
+    scaled_controls_topic = "";
 
   if (!nh_local_.getParam("use_yaml", use_yaml_))
     use_yaml_ = true;

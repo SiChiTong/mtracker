@@ -52,7 +52,7 @@
   <!-- Other Nodes -->
   <!-- =========== -->
   <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen">
-    <param name="trajectory_type"   value="2"/>
+    <param name="trajectory_type"   value="0"/>
     <param name="trajectory_paused" value="false"/>
     <param name="child_frame" type="string" value="reference"/>
   </node>

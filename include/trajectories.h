@@ -46,6 +46,7 @@ class Trajectory
 {
 public:
   Trajectory() : x_0_(0.0), y_0_(0.0), phi_0_(0.0) {}
+
   Trajectory(double x, double y, double phi) : x_0_(x), y_0_(y), phi_0_(phi) {}
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
@@ -83,7 +84,9 @@ class LinearTrajectory : public Trajectory
 {
 public:
   LinearTrajectory() : v_(0.0) {}
+
   LinearTrajectory(double phi, double v) : Trajectory(0.0, 0.0, phi), v_(v) {}
+
   LinearTrajectory(double x, double y, double phi, double v) : Trajectory(x, y, phi), v_(v) {}
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
@@ -113,12 +116,14 @@ class HarmonicTrajectory : public Trajectory
 {
 public:
   HarmonicTrajectory() : w_(0.0), r_x_(0.0), r_y_(0.0), n_x_(0.0), n_y_(0.0) {}
+
   HarmonicTrajectory(double T, double r_x, double r_y, int n_x, int n_y) :
-    Trajectory(0.0, 0.0, M_PI_2), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+    r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
+    { (T > 0.0) ? w_ = 2.0 * M_PI / T : w_ = 0.0; }
+
   HarmonicTrajectory(double x, double y, double T, double r_x, double r_y, int n_x, int n_y) :
-    Trajectory(x, y, M_PI_2), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+    Trajectory(x, y, 0.0), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
+    { (T > 0) ? w_ = 2.0 * M_PI / T : w_ = 0.0; }
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
@@ -142,24 +147,31 @@ public:
 
 protected:
   double w_;           // Frequency [rad/s]
-  int n_x_, n_y_;      // Frequency multipliers [-]
   double r_x_, r_y_;   // Radii [m]
+  int n_x_, n_y_;      // Frequency multipliers [-]
 };
 
 
 class LemniscateTrajectory : public Trajectory
 {
 public:
-  LemniscateTrajectory() : w_(0.0), a_(0.0), b_(0.0) {}
-  LemniscateTrajectory(double T, double a, double b) : a_(a), b_(b)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
-  LemniscateTrajectory(double x, double y, double T, double a, double b) : Trajectory(x, y, M_PI_2), a_(a), b_(b)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+  LemniscateTrajectory() : w_(0.0), r_x_(0.0), r_y_(0.0), a_(0.0), b_(0.0) {}
+
+  LemniscateTrajectory(double T, double r_x, double r_y, double a, double b) :
+    r_x_(r_x), r_y_(r_y), a_(a), b_(b)
+    { (T > 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+
+  LemniscateTrajectory(double x, double y, double T, double r_x, double r_y, double a, double b) :
+    Trajectory(x, y, 0.0), r_x_(r_x), r_y_(r_y), a_(a), b_(b)
+    { (T > 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
-    pose.x = 0.0;
-    pose.y = 0.0;
+
+    double C = pow(a_, 2.0) * cos(2.0 * w_ * t) + sqrt(pow(b_, 4.0) - pow(a_, 2.0) * pow(sin(2.0 * w_ * t), 2.0));
+
+    pose.x = r_x_ * cos(w_ * t) * C;
+    pose.y = r_y_ * sin(w_ * t) * C;
     pose.theta = 0.0;
 
     return pose;
@@ -176,6 +188,8 @@ public:
 
 protected:
   double w_;      // Frequency [rad/s]
+  double r_x_;    // Radii [m]
+  double r_y_;
   double a_;      // Separation of focal [m]
   double b_;      // Distance (product) [m]
 };

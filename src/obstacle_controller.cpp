@@ -277,7 +277,7 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
 
     p_g = R * p_l + dp;
 
-    if (p_g(0) >= -0.7 && p_g(0) <= 3.0 && p_g(1) >= -0.6 && p_g(1) <= 2.0) {
+    if (p_g(0) >= -2.0 && p_g(0) <= 1.0 && p_g(1) >= -1.0 && p_g(1) <= 1.0) {
       o.x = p_g(0);
       o.y = p_g(1);
       o.r = obstacles_msg->radii[i];

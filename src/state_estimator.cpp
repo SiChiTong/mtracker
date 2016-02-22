@@ -133,9 +133,23 @@ void StateEstimator::odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
 }
 
 void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
+  double prev_theta = optitrack_pose_.theta;
+  double prev_theta_aux = atan2(sin(optitrack_pose_.theta), cos(optitrack_pose_.theta));
+
   optitrack_pose_.x =  pose_msg->y - X_OFFSET;
   optitrack_pose_.y = -pose_msg->x - Y_OFFSET;
   optitrack_pose_.theta = pose_msg->theta;
+
+  double new_theta = optitrack_pose_.theta;
+  double new_theta_aux = atan2(sin(optitrack_pose_.theta), cos(optitrack_pose_.theta));
+  double theta_diff = new_theta_aux - prev_theta_aux;
+
+  if (theta_diff < -M_PI)
+    optitrack_pose_.theta = prev_theta + theta_diff + 2.0 * M_PI;
+  else if (theta_diff > M_PI)
+    optitrack_pose_.theta = prev_theta + theta_diff - 2.0 * M_PI;
+  else
+    optitrack_pose_.theta = prev_theta + theta_diff;
 }
 
 bool StateEstimator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {

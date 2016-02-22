@@ -156,10 +156,6 @@ void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_m
 bool MTracker::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   mtracker_active_ = req.activate;
 
-  if (!mtracker_active_) {
-    com_->setVelocities(0.0, 0.0);
-  }
-
   return true;
 }
 

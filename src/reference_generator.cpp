@@ -79,7 +79,7 @@ void ReferenceGenerator::initialize() {
 
   int trajectory_type;
   if (!nh_local_.getParam("trajectory_type", trajectory_type))
-    trajectory_type = 2;
+    trajectory_type = 0;
 
   if (!nh_local_.getParam("trajectory_paused", paused_))
     paused_ = false;
@@ -98,13 +98,13 @@ void ReferenceGenerator::initialize() {
 
   switch (trajectory_type) {
     case 0:
-      trajectory_ = new Trajectory(2.0, -1.0, -M_PI_4); break;
+      trajectory_ = new Trajectory(0.0, 0.0, 0.0); break;
     case 1:
-      trajectory_ = new LinearTrajectory(M_PI_4, 0.1); break;
+      trajectory_ = new LinearTrajectory(0.0, 0.1); break;
     case 2:
-      trajectory_ = new HarmonicTrajectory(5.0, 0.5, 0.3, 1, 1); break;
+      trajectory_ = new HarmonicTrajectory(5.0, 1.0, 1.0, 1, 2); break;
     case 3:
-      trajectory_ = new LemniscateTrajectory(); break;
+      trajectory_ = new LemniscateTrajectory(5.0, 1.0, 1.0, 0.9, 1.0); break;
     default:
       trajectory_ = new Trajectory(0.0, 0.0, 0.0); break;
   }
@@ -134,7 +134,6 @@ void ReferenceGenerator::update(double dt) {
   pose_ = trajectory_->calculatePose(time_);
   velocity_ = trajectory_->calculateVelocity(time_);
 
-//  double new_theta = pose_.theta;
   double new_theta_aux = atan2(sin(pose_.theta), cos(pose_.theta));
   double theta_diff = new_theta_aux - prev_theta_aux;
 
@@ -142,6 +141,8 @@ void ReferenceGenerator::update(double dt) {
     pose_.theta = prev_theta + theta_diff + 2.0 * M_PI;
   else if (theta_diff > M_PI)
     pose_.theta = prev_theta + theta_diff - 2.0 * M_PI;
+  else
+    pose_.theta = prev_theta + theta_diff;
 }
 
 void ReferenceGenerator::publish() {
@@ -171,13 +172,6 @@ bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trig
 
 bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
   // The parameters come as: [start, pause, update_params, trajectory_type, x, y, theta, v, T, Rx, Ry, nx, ny]
-  if (req.params[0])
-    start();
-  else if (req.params[1])
-    pause();
-  else
-    stop();
-
   if (req.params[2]) {
     if (req.params[3] == 0.0) {         // Point trajectory
       delete trajectory_;
@@ -194,9 +188,20 @@ bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::
     }
     else if (req.params[3] == 3.0) {    // Lemniscate trajectory
       delete trajectory_;
-      trajectory_ = new LemniscateTrajectory();
+      trajectory_ = new LemniscateTrajectory(req.params[4], req.params[5], req.params[8], req.params[9],
+          req.params[10], req.params[11], req.params[12]);
     }
+
+    time_ = 0.0;
+    update(0.0);
   }
+
+  if (req.params[0])
+    start();
+  else if (req.params[1])
+    pause();
+  else
+    stop();
 
   return true;
 }
