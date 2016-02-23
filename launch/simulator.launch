@@ -66,6 +66,7 @@
   <node name="simulator" pkg="mtracker" type="simulator" respawn="false" required="true" output="screen">
     <param name="child_frame"   type="string" value="virtual"/>
     <param name="time_constant" value="0.1"/>
+    <param name="time_delay"    value="0.0"/>
     <param name="initial_x"     value="1.0"/>
     <param name="initial_y"     value="0.5"/>
     <param name="initial_theta" value="0.7"/>

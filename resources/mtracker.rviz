@@ -69,8 +69,6 @@ Visualization Manager:
       Frame Timeout: 5
       Frames:
         All Enabled: false
-        reference:
-          Value: true
         virtual:
           Value: true
         world:
@@ -82,8 +80,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          reference:
-            {}
           virtual:
             {}
       Update Interval: 0
@@ -171,7 +167,7 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 169.099
+      Scale: 331.981
       Target Frame: world
       Value: MTrackerView
       X: 0

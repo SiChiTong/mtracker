@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <boost/circular_buffer.hpp>
+
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -55,8 +57,7 @@ private:
   void initialize();
   void computeVelocity();
   void computePose();
-  void publishTransform();
-  void publishPoseStamped();
+  void publish();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
@@ -82,7 +83,9 @@ private:
   geometry_msgs::Twist velocity_;
   geometry_msgs::Twist controls_;
 
-  double Tp_, Tf_;
+  double Tp_, Tf_, To_; // Sampling time, time constant, delay
+  boost::circular_buffer<geometry_msgs::Pose2D> lagged_pose_;
+  boost::circular_buffer<geometry_msgs::Twist> lagged_velocity_;
 
   int loop_rate_;
   bool simulator_active_;

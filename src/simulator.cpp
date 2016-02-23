@@ -50,12 +50,7 @@ Simulator::Simulator() : nh_(""), nh_local_("~"), simulator_active_(false) {
     if (simulator_active_) {
       computeVelocity();
       computePose();
-
-      velocity_pub_.publish(velocity_);
-      pose_pub_.publish(pose_);
-
-      publishTransform();
-      publishPoseStamped();
+      publish();
     }
 
     rate.sleep();
@@ -66,7 +61,7 @@ void Simulator::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  if (loop_rate_ != 0)
+  if (loop_rate_ > 0)
     Tp_ = 1.0 / loop_rate_;
 
   std::string scaled_controls_topic;
@@ -83,6 +78,18 @@ void Simulator::initialize() {
 
   if (!nh_local_.getParam("time_constant", Tf_))
     Tf_ = 0.1;
+
+  if (!nh_local_.getParam("time_delay", To_))
+    To_ = 0.0;
+
+  if (To_ > Tp_) {
+    lagged_pose_.assign(static_cast<int>(To_ / Tp_), geometry_msgs::Pose2D());
+    lagged_velocity_.assign(static_cast<int>(To_ / Tp_), geometry_msgs::Twist());
+  }
+  else  {
+    lagged_pose_.assign(1, geometry_msgs::Pose2D());
+    lagged_velocity_.assign(1, geometry_msgs::Twist());
+  }
 
   if (!nh_.getParam("world_frame", world_frame_))
     world_frame_ = "world";
@@ -110,31 +117,37 @@ void Simulator::initialize() {
 void Simulator::computeVelocity() {
   velocity_.linear.x  += Tp_ / (Tp_ + Tf_) * (controls_.linear.x - velocity_.linear.x);
   velocity_.angular.z += Tp_ / (Tp_ + Tf_) * (controls_.angular.z - velocity_.angular.z);
+
+  lagged_velocity_.push_back(velocity_);
 }
 
 void Simulator::computePose() {
   pose_.x += Tp_ * velocity_.linear.x * cos(pose_.theta);
   pose_.y += Tp_ * velocity_.linear.x * sin(pose_.theta);
   pose_.theta += Tp_ * velocity_.angular.z;
+
+  lagged_pose_.push_back(pose_);
 }
 
-void Simulator::publishTransform() {
-  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
+void Simulator::publish() {
+  geometry_msgs::Twist velocity = lagged_velocity_.front();
+  geometry_msgs::Pose2D pose = lagged_pose_.front();
+  geometry_msgs::PoseStamped pose_s;
+
+  velocity_pub_.publish(velocity);
+  pose_pub_.publish(pose);
+
+  pose_tf_.setOrigin(tf::Vector3(pose.x, pose.y, 0.0));
+  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose.theta));
   pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), world_frame_, child_frame_));
-}
 
-void Simulator::publishPoseStamped() {
-  geometry_msgs::PoseStamped pose;
+  pose_s.header.stamp = ros::Time::now();
+  pose_s.header.frame_id = child_frame_;
+  pose_s.pose.position.x = pose.x;
+  pose_s.pose.position.y = pose.y;
+  pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose.theta);
 
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = child_frame_;
-
-  pose.pose.position.x = pose_.x;
-  pose.pose.position.y = pose_.y;
-  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
-
-  pose_stamped_pub_.publish(pose);
+  pose_stamped_pub_.publish(pose_s);
 }
 
 void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
@@ -143,11 +156,34 @@ void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_
 
 bool Simulator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   simulator_active_ = req.activate;
+
+  if (!simulator_active_) {
+    lagged_pose_.assign(lagged_pose_.size(), pose_);
+    lagged_velocity_.assign(lagged_velocity_.size(), velocity_);
+  }
+
   return true;
 }
 
 bool Simulator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  return true;
+  // The parameters are:
+  if (req.params[0] >= 0.0 && req.params[1] >= 0.0) {
+    Tf_ = req.params[0];
+    To_ = req.params[1];
+
+    if (To_ > Tp_) {
+      lagged_pose_.assign(static_cast<int>(To_ / Tp_), pose_);
+      lagged_velocity_.assign(static_cast<int>(To_ / Tp_), velocity_);
+    }
+    else  {
+      lagged_pose_.assign(1, pose_);
+      lagged_velocity_.assign(1, velocity_);
+    }
+
+    return true;
+  }
+  else
+    return false;
 }
 
 int main(int argc, char** argv) {
