@@ -53,3 +53,4 @@ add_dependencies(state_estimator ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(data_recorder src/data_recorder.cpp include/data_recorder.h)
 target_link_libraries(data_recorder ${catkin_LIBRARIES})# libyaml-cpp.a)
+add_dependencies(data_recorder ${${PROJECT_NAME}_EXPORTED_TARGETS})

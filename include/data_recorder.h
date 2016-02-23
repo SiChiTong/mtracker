@@ -51,6 +51,11 @@
 
 namespace mtracker {
 
+struct Obstacle {
+  Obstacle() : x(0.0), y(0.0), r(0.0) {}
+  double x, y, r;
+};
+
 class DataRecorder
 {
 public:
@@ -66,7 +71,7 @@ private:
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose);
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
   void scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
-  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles);
+  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
   bool trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res);
   bool updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res);
 
@@ -92,6 +97,7 @@ private:
   std::vector<geometry_msgs::Pose2D> pose_list_;
   std::vector<geometry_msgs::Twist> controls_list_;
   std::vector<geometry_msgs::Twist> scaled_controls_list_;
+  std::vector< std::vector<Obstacle> > obstacles_list_;
 
   bool use_yaml_;
   bool use_txt_;

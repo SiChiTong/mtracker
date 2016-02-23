@@ -143,11 +143,14 @@ void DataRecorder::emitYamlFile() {
 }
 
 void DataRecorder::emitTxtFile() {
-  static int file_number = 0;
-  ++file_number;
+  time_t now = time(NULL);
+  char the_date[30];
+
+  if (now != -1)
+    strftime(the_date, 30, "%Y_%m_%d_%H_%M_%S", gmtime(&now));
 
   std::string username = getenv("USER");
-  std::string filename = "/home/" + username + "/MTrackerRecords/MTrackerRecord_" + std::to_string(file_number) + ".txt";
+  std::string filename = "/home/" + username + "/MTrackerRecords/MTrackerRecord_" + std::string(the_date) + ".txt";
   std::ofstream file(filename);
 
   file << "n \t t \t x \t y \t theta \t v \t w \t v_s \t w_s \n";
@@ -156,6 +159,17 @@ void DataRecorder::emitTxtFile() {
          << "\t" << controls_list_[i].linear.x << "\t" << controls_list_[i].angular.z
          << "\t" << scaled_controls_list_[i].linear.x << "\t" << scaled_controls_list_[i].angular.z << "\n";
   }
+
+  std::string obstacles_filename = "/home/" + username + "/MTrackerRecords/ObstaclesRecord_" + std::string(the_date) + ".txt";
+  std::ofstream obstacles_file(obstacles_filename);
+
+  for (int i = 0; i < obstacles_list_.size(); ++i) {
+    for (int j = 0; j < obstacles_list_[i].size(); ++j) {
+      obstacles_file <<  obstacles_list_[i][j].x << "\t" << obstacles_list_[i][j].y << "\t" << obstacles_list_[i][j].r << "\t";
+    }
+  }
+
+  obstacles_file << "\n";
 
   file.close();
 }
@@ -170,6 +184,21 @@ void DataRecorder::controlsCallback(const geometry_msgs::Twist::ConstPtr& contro
 
 void DataRecorder::scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
   scaled_controls_ = *controls_msg;
+}
+
+void DataRecorder::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr &obstacles_msg) {
+  std::vector<Obstacle> o_list;
+
+  Obstacle o;
+  for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
+    o.x = obstacles_msg->centre_points[i].x;
+    o.y = obstacles_msg->centre_points[i].y;
+    o.r = obstacles_msg->radii[i];
+
+    o_list.push_back(o);
+  }
+
+  obstacles_list_.push_back(o_list);
 }
 
 bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {

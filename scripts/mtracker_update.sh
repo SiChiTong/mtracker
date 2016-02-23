@@ -9,8 +9,7 @@ ssh mtracker@MTracker "if [ -d $RemoteFolder ]; then rm -r $RemoteFolder; fi"
 ssh mtracker@MTracker "if [ -d /home/mtracker/catkin_ws/build/mtracker/ ]; then rm -r /home/mtracker/catkin_ws/build/mtracker/; fi"
 ssh mtracker@MTracker "if [ -d /home/mtracker/catkin_ws/devel/share/mtracker/ ]; then rm -r /home/mtracker/catkin_ws/devel/share/mtracker/; fi"
 ssh mtracker@MTracker "if [ -d /home/mtracker/catkin_ws/devel/lib/mtracker/ ]; then rm -r /home/mtracker/catkin_ws/devel/lib/mtracker/; fi"
-
-#ssh mtracker@MTracker "if [ -d /home/mtracker/catkin_ws/devel/include/mtracker/ ]; then rm -r /home/mtracker/catkin_ws/devel/include/mtracker/; fi"
+ssh mtracker@MTracker "if [ -d /home/mtracker/catkin_ws/devel/include/mtracker/ ]; then rm -r /home/mtracker/catkin_ws/devel/include/mtracker/; fi"
 
 
 echo "---------------------";
@@ -18,7 +17,7 @@ echo " Copying new version ";
 echo "---------------------";
 ssh mtracker@MTracker "mkdir $RemoteFolder"
 
-## Do not copy git repository
+## Does not copy git repository
 scp -r ${LocalFolder}src/ mtracker@MTracker:${RemoteFolder}src/
 scp -r ${LocalFolder}srv/ mtracker@MTracker:${RemoteFolder}srv/
 scp -r ${LocalFolder}launch/ mtracker@MTracker:${RemoteFolder}launch/
