@@ -40,9 +40,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <tf/transform_broadcaster.h>
 #include <mtracker/Trigger.h>
 #include <mtracker/Params.h>
 
@@ -63,8 +61,6 @@ private:
 
   void initialize();
   void transferData();
-  void publishTransform();
-  void publishPoseStamped();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
@@ -76,15 +72,8 @@ private:
   ros::Subscriber controls_sub_;
   ros::Publisher pose_pub_;
   ros::Publisher velocity_pub_;
-  ros::Publisher pose_stamped_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
-
-  tf::TransformBroadcaster pose_bc_;
-  tf::Transform pose_tf_;
-
-  std::string world_frame_;
-  std::string child_frame_;
 
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;

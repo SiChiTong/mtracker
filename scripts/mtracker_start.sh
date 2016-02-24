@@ -12,7 +12,6 @@ echo "     Starting roscore      ";
 echo "        Please wait        ";
 echo "---------------------------";
 ssh mtracker@MTracker "source /opt/ros/hydro/setup.bash && source /home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh && roscore" &
-sleep 5
 
 #ssh mtracker@MTracker "
 #  ps cax | grep roscore > /dev/null;
@@ -25,6 +24,7 @@ sleep 5
 #    echo 'Roscore already running.';
 #  fi;"
 
+sleep 5;
 echo "---------------------------";
 echo "      Starting Nodes       ";
 echo "---------------------------";

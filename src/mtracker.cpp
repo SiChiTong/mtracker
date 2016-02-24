@@ -66,9 +66,6 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
 
       pose_pub_.publish(pose_);
       velocity_pub_.publish(velocity_);
-
-      //publishTransform();
-      //publishPoseStamped();
     }
 
     rate.sleep();
@@ -99,16 +96,9 @@ void MTracker::initialize() {
   if (!nh_.getParam("odom_velocity_topic", odom_velocity_topic))
     odom_velocity_topic = "odom_velocity";
 
-  if (!nh_.getParam("world_frame", world_frame_))
-    world_frame_ = "world";
-
-  if (!nh_local_.getParam("child_frame", child_frame_))
-    child_frame_ = "odometry";
-
   controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &MTracker::controlsCallback, this);
   pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
   velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
-  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(odom_pose_topic + "_stamped", 10);
   trigger_srv_ = nh_.advertiseService("mtracker_trigger_srv", &MTracker::trigger, this);
   params_srv_ = nh_.advertiseService("mtracker_params_srv", &MTracker::updateParams, this);
 }
@@ -130,31 +120,18 @@ void MTracker::transferData() {
   velocity_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
 }
 
-void MTracker::publishTransform() {
-  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
-  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), world_frame_, child_frame_));
-}
-
-void MTracker::publishPoseStamped() {
-  geometry_msgs::PoseStamped pose;
-
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = child_frame_;
-
-  pose.pose.position.x = pose_.x;
-  pose.pose.position.y = pose_.y;
-  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
-
-  pose_stamped_pub_.publish(pose);
-}
-
 void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
   controls_ = *controls_msg;
 }
 
 bool MTracker::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   mtracker_active_ = req.activate;
+
+  if (!mtracker_active_) {
+    com_->setVelocities(0.0, 0.0);
+    com_->writeFrame();
+    com_->readFrame();
+  }
 
   return true;
 }
