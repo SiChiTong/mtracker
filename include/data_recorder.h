@@ -43,6 +43,7 @@
 #include <ctime>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <mtracker/Trigger.h>
@@ -68,10 +69,12 @@ private:
   void emitYamlFile();
   void emitTxtFile();
 
-  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose);
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
-  void scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& controls);
+  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
+  void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg);
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  void scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
   void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
+  void potentialCallback(const std_msgs::Float64::ConstPtr& potential_msg);
   bool trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res);
   bool updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res);
 
@@ -79,9 +82,11 @@ private:
   ros::NodeHandle nh_local_;
 
   ros::Subscriber pose_sub_;
+  ros::Subscriber ref_pose_sub_;
   ros::Subscriber controls_sub_;
   ros::Subscriber scaled_controls_sub_;
   ros::Subscriber obstacles_sub_;
+  ros::Subscriber potential_sub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
@@ -90,17 +95,26 @@ private:
   geometry_msgs::Twist controls_;
   geometry_msgs::Twist scaled_controls_;
   obstacle_detector::Obstacles obstacles_;
+  double potential_;
 
   ros::Time start_mark_;
 
   std::vector<double> t_;
+  std::vector<double> potential_list_;
   std::vector<geometry_msgs::Pose2D> pose_list_;
+  std::vector<geometry_msgs::Pose2D> ref_pose_list_;
   std::vector<geometry_msgs::Twist> controls_list_;
   std::vector<geometry_msgs::Twist> scaled_controls_list_;
   std::vector< std::vector<Obstacle> > obstacles_list_;
 
   bool use_yaml_;
   bool use_txt_;
+  bool record_controls_;
+  bool record_scaled_controls_;
+  bool record_pose_;
+  bool record_reference_pose_;
+  bool record_obstacles_;
+  bool record_potential_;
 
   int loop_rate_;
   bool recording_data_;

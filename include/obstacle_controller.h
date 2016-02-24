@@ -41,6 +41,7 @@
 #include <vector>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
 #include <mtracker/Trigger.h>
@@ -86,6 +87,7 @@ private:
   ros::Subscriber pose_sub_;
   ros::Subscriber obstacles_sub_;
   ros::Publisher controls_pub_;
+  ros::Publisher potential_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 

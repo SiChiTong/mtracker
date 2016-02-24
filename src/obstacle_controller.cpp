@@ -51,6 +51,10 @@ ObstacleController::ObstacleController() : nh_(""), nh_local_("~"), obstacle_con
     if (obstacle_controller_active_) {
       computeControls();
       controls_pub_.publish(controls_);
+
+      std_msgs::Float64 potential;
+      potential.data = getV();
+      potential_pub_.publish(potential);
     }
 
     rate.sleep();
@@ -73,6 +77,10 @@ void ObstacleController::initialize() {
   if (!nh_.getParam("obstacles_topic", obstacles_topic))
     obstacles_topic = "obstacles";
 
+  std::string potential_topic;
+  if (!nh_.getParam("potential_topic", potential_topic))
+    potential_topic = "potential";
+
   if (!nh_local_.getParam("world_radius", world_.r))
     world_.r = 5.0;
 
@@ -94,6 +102,7 @@ void ObstacleController::initialize() {
   pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &ObstacleController::poseCallback, this);
   obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic, 10, &ObstacleController::obstaclesCallback, this);
   controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
+  potential_pub_ = nh_.advertise<std_msgs::Float64>(potential_topic, 10);
   trigger_srv_ = nh_.advertiseService("obstacle_controller_trigger_srv", &ObstacleController::trigger, this);
   params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
 }
@@ -261,25 +270,14 @@ void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
 void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg) {
   obstacles_.clear();
 
-  vec p_l = vec(2);   // Point coordinates in local frame
-  vec p_g = vec(2);   // Point coordinates in global frame
-  vec dp = vec(2);    // Translation between local and global frame
-  dp << pose_.x << pose_.y;
-
-  mat R = mat(2, 2);
-  R <<  cos(pose_.theta) << sin(pose_.theta) << endr
-    << -sin(pose_.theta) << cos(pose_.theta) << endr;
-
   Obstacle o;
   for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-    p_l(0) = obstacles_msg->centre_points[i].x;
-    p_l(1) = obstacles_msg->centre_points[i].y;
+    double x = obstacles_msg->centre_points[i].x;
+    double y = obstacles_msg->centre_points[i].y;
 
-    p_g = R * p_l + dp;
-
-    if (p_g(0) >= -2.0 && p_g(0) <= 1.0 && p_g(1) >= -1.0 && p_g(1) <= 1.0) {
-      o.x = p_g(0);
-      o.y = p_g(1);
+    if (x >= -2.0 && x <= 1.0 && y >= -1.0 && y <= 1.0) {
+      o.x = x;
+      o.y = y;
       o.r = obstacles_msg->radii[i];
 
       obstacles_.push_back(o);

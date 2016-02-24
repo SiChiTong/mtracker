@@ -67,12 +67,6 @@ public:
     return velocity;
   }
 
-  void setOrigin(double x, double y, double phi) {
-    x_0_ = x;
-    y_0_ = y;
-    phi_0_ = phi;
-  }
-
 protected:
   double x_0_;
   double y_0_;
@@ -108,7 +102,7 @@ public:
   }
 
 protected:
-  double v_;       // Velocity [m/s]
+  double v_;    // Speed [m/s]
 };
 
 
@@ -123,7 +117,7 @@ public:
 
   HarmonicTrajectory(double x, double y, double T, double r_x, double r_y, int n_x, int n_y) :
     Trajectory(x, y, 0.0), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
-    { (T > 0) ? w_ = 2.0 * M_PI / T : w_ = 0.0; }
+    { (T > 0.0) ? w_ = 2.0 * M_PI / T : w_ = 0.0; }
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
@@ -138,7 +132,9 @@ public:
     geometry_msgs::Twist velocity;
     velocity.linear.x = -r_x_ * n_x_ * w_ * sin(n_x_ * w_ * t);
     velocity.linear.y =  r_y_ * n_y_ * w_ * cos(n_y_ * w_ * t);
-    velocity.angular.z = (-r_y_ * pow(n_y_, 2.0) * pow(w_, 2.0) * sin(n_y_ * w_ * t) * velocity.linear.x -
+
+    if (pow(velocity.linear.x, 2.0) + pow(velocity.linear.y, 2.0) > 0.0)
+      velocity.angular.z = (-r_y_ * pow(n_y_, 2.0) * pow(w_, 2.0) * sin(n_y_ * w_ * t) * velocity.linear.x -
                   -r_x_ * pow(n_x_, 2.0) * pow(w_, 2.0) * cos(n_x_ * w_ * t) * velocity.linear.y) /
                  (pow(velocity.linear.x, 2.0) + pow(velocity.linear.y, 2.0));
 
@@ -159,29 +155,59 @@ public:
 
   LemniscateTrajectory(double T, double r_x, double r_y, double a, double b) :
     r_x_(r_x), r_y_(r_y), a_(a), b_(b)
-    { (T > 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+    { (T > 0.0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
 
   LemniscateTrajectory(double x, double y, double T, double r_x, double r_y, double a, double b) :
     Trajectory(x, y, 0.0), r_x_(r_x), r_y_(r_y), a_(a), b_(b)
-    { (T > 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+    { (T > 0.0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
 
-    double C = pow(a_, 2.0) * cos(2.0 * w_ * t) + sqrt(pow(b_, 4.0) - pow(a_, 2.0) * pow(sin(2.0 * w_ * t), 2.0));
+    double B_aux = pow(b_, 4.0) - pow(a_, 2.0) * pow(sin(2.0 * w_ * t), 2.0);
+    double B;
+    if (B_aux >= 0.0)
+      B = sqrt(B_aux);
+    else
+      B = sqrt(-B_aux);
+
+    double C = pow(a_, 2.0) * cos(2.0 * w_ * t) + B;
+    double dC_dt;
+    if (C != 0.0 && B != 0.0)
+      dC_dt = -(pow(a_, 2.0) * w_ / C) * (sin(2.0 * w_ * t) + sin(4.0 * w_ * t) / (2.0 * B));
+    else
+      dC_dt = 1.0;
+
+    double vx = -r_x_ * w_ * sin(w_ * t) * C + r_x_ * cos(w_ * t) * dC_dt;
+    double vy =  r_y_ * w_ * cos(w_ * t) * C + r_x_ * sin(w_ * t) * dC_dt;
 
     pose.x = r_x_ * cos(w_ * t) * C;
     pose.y = r_y_ * sin(w_ * t) * C;
-    pose.theta = 0.0;
+    pose.theta = atan2(vy, vx);
 
     return pose;
   }
 
   virtual geometry_msgs::Twist calculateVelocity(double t) {
     geometry_msgs::Twist velocity;
-    velocity.linear.x = 0.0;
-    velocity.linear.y = 0.0;
-    velocity.angular.z = 0.0;
+
+    double B_aux = pow(b_, 4.0) - pow(a_, 2.0) * pow(sin(2.0 * w_ * t), 2.0);
+    double B;
+    if (B_aux >= 0.0)
+      B = sqrt(B_aux);
+    else
+      B = sqrt(-B_aux);
+
+    double C = pow(a_, 2.0) * cos(2.0 * w_ * t) + B;
+    double dC_dt;
+    if (C != 0.0 && B != 0.0)
+      dC_dt = -(pow(a_, 2.0) * w_ / C) * (sin(2.0 * w_ * t) + sin(4.0 * w_ * t) / (2.0 * B));
+    else
+      dC_dt = 1.0;
+
+    velocity.linear.x = -r_x_ * w_ * sin(w_ * t) * C + r_x_ * cos(w_ * t) * dC_dt;
+    velocity.linear.y =  r_y_ * w_ * cos(w_ * t) * C + r_x_ * sin(w_ * t) * dC_dt;
+    velocity.angular.z = 0.0; // TODO calculate this
 
     return velocity;
   }
