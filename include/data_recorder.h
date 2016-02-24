@@ -35,6 +35,11 @@
 
 #pragma once
 
+#define X_MIN -2.0
+#define X_MAX 2.3
+#define Y_MIN -1.2
+#define Y_MAX 1.2
+
 #include <boost/filesystem.hpp>
 //#include <yaml-cpp/yaml.h>
 #include <vector>

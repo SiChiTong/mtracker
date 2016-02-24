@@ -262,11 +262,16 @@ void DataRecorder::obstaclesCallback(const obstacle_detector::Obstacles::ConstPt
 
     Obstacle o;
     for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-      o.x = obstacles_msg->centre_points[i].x;
-      o.y = obstacles_msg->centre_points[i].y;
-      o.r = obstacles_msg->radii[i];
+      double x = obstacles_msg->centre_points[i].x;
+      double y = obstacles_msg->centre_points[i].y;
 
-      o_list.push_back(o);
+      if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
+        o.x = x;
+        o.y = y;
+        o.r = obstacles_msg->radii[i];
+
+        o_list.push_back(o);
+      }
     }
 
     obstacles_list_.push_back(o_list);

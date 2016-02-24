@@ -67,8 +67,8 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
       pose_pub_.publish(pose_);
       velocity_pub_.publish(velocity_);
 
-      publishTransform();
-      publishPoseStamped();
+      //publishTransform();
+      //publishPoseStamped();
     }
 
     rate.sleep();
