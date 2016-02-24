@@ -3,7 +3,7 @@ project(mtracker)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 
-find_package(catkin REQUIRED COMPONENTS roscpp rospy geometry_msgs tf joy message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs geometry_msgs tf joy message_generation)
 #find_package(obstacle_detector REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(Boost 1.46.1 REQUIRED system)
@@ -14,7 +14,7 @@ generate_messages()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp geometry_msgs tf joy obstacle_detector message_runtime
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs tf joy obstacle_detector message_runtime
   DEPENDS system_lib)
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})# ${obstacle_detector_INCLUDE_DIRS})

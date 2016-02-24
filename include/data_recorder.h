@@ -109,10 +109,10 @@ private:
 
   bool use_yaml_;
   bool use_txt_;
-  bool record_controls_;
-  bool record_scaled_controls_;
   bool record_pose_;
   bool record_reference_pose_;
+  bool record_controls_;
+  bool record_scaled_controls_;
   bool record_obstacles_;
   bool record_potential_;
 

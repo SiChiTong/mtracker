@@ -254,7 +254,7 @@ void ObstacleController::computeControls() {
   if (h != 0.0)
     b = -b_dash_ * dot(L, gradV) / h;
   else
-    b = 0.0;
+    b = b_dash_;
 
   // Calculate control signals time derivatives
   u = -(a_ * I + b * J) * trans(B) * gradV;
@@ -275,7 +275,7 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
     double x = obstacles_msg->centre_points[i].x;
     double y = obstacles_msg->centre_points[i].y;
 
-    if (x >= -2.0 && x <= 1.0 && y >= -1.0 && y <= 1.0) {
+    if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
       o.x = x;
       o.y = y;
       o.r = obstacles_msg->radii[i];

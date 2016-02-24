@@ -129,6 +129,8 @@ void DataRecorder::initialize() {
   std::string username = getenv("USER");
   std::string folder = "/home/" + username + "/MTrackerRecords/";
   boost::filesystem::create_directories(folder);
+
+  potential_ = 0.0;
 }
 
 void DataRecorder::addLatestData() {
@@ -217,22 +219,25 @@ void DataRecorder::emitTxtFile() {
     file << "\n";
   }
 
-  std::string obstacles_filename = "/home/" + username + "/MTrackerRecords/ObstaclesRecord_" + std::string(the_date) + ".txt";
-  std::ofstream obstacles_file(obstacles_filename);
-
-  for (int i = 0; i < obstacles_list_.size(); ++i) {
-    for (int j = 0; j < obstacles_list_[i].size(); ++j) {
-      obstacles_file << obstacles_list_[i][j].x << "\t" << obstacles_list_[i][j].y << "\t" << obstacles_list_[i][j].r << "\t";
-    }
-    // Fill row to 40 (padding)
-    for (int j = obstacles_list_[i].size(); j < 50; ++j) {
-      obstacles_file << "0.0 \t 0.0 \t 0.0 \t";
-    }
-    obstacles_file << "\n";
-  }
-
   file.close();
-  obstacles_file.close();
+
+  if (record_obstacles_) {
+    std::string obstacles_filename = "/home/" + username + "/MTrackerRecords/ObstaclesRecord_" + std::string(the_date) + ".txt";
+    std::ofstream obstacles_file(obstacles_filename);
+
+    for (int i = 0; i < obstacles_list_.size(); ++i) {
+      for (int j = 0; j < obstacles_list_[i].size(); ++j) {
+        obstacles_file << obstacles_list_[i][j].x << "\t" << obstacles_list_[i][j].y << "\t" << obstacles_list_[i][j].r << "\t";
+      }
+      // Fill row to 40 (padding)
+      for (int j = obstacles_list_[i].size(); j < 50; ++j) {
+        obstacles_file << "0.0 \t 0.0 \t 0.0 \t";
+      }
+      obstacles_file << "\n";
+    }
+
+    obstacles_file.close();
+  }
 }
 
 void DataRecorder::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
@@ -252,18 +257,20 @@ void DataRecorder::scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& 
 }
 
 void DataRecorder::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr &obstacles_msg) {
-  std::vector<Obstacle> o_list;
+  if (record_obstacles_) {
+    std::vector<Obstacle> o_list;
 
-  Obstacle o;
-  for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-    o.x = obstacles_msg->centre_points[i].x;
-    o.y = obstacles_msg->centre_points[i].y;
-    o.r = obstacles_msg->radii[i];
+    Obstacle o;
+    for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
+      o.x = obstacles_msg->centre_points[i].x;
+      o.y = obstacles_msg->centre_points[i].y;
+      o.r = obstacles_msg->radii[i];
 
-    o_list.push_back(o);
+      o_list.push_back(o);
+    }
+
+    obstacles_list_.push_back(o_list);
   }
-
-  obstacles_list_.push_back(o_list);
 }
 
 void DataRecorder::potentialCallback(const std_msgs::Float64::ConstPtr& potential_msg) {

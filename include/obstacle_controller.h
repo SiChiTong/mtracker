@@ -37,6 +37,11 @@
 
 #define ARMA_DONT_USE_CXX11
 
+#define X_MIN -2.0
+#define X_MAX 2.3
+#define Y_MIN -1.2
+#define Y_MAX 1.2
+
 #include <armadillo>
 #include <vector>
 
