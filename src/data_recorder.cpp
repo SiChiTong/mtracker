@@ -134,7 +134,7 @@ void DataRecorder::initialize() {
 }
 
 void DataRecorder::addLatestData() {
-  double t = (start_mark_ - ros::Time::now()).toSec();
+  double t = (ros::Time::now() - start_mark_).toSec();
   t_.push_back(t);
   pose_list_.push_back(pose_);
   ref_pose_list_.push_back(ref_pose_);

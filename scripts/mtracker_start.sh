@@ -11,7 +11,10 @@ echo "---------------------------";
 echo "     Starting roscore      ";
 echo "        Please wait        ";
 echo "---------------------------";
-ssh mtracker@MTracker "source /opt/ros/hydro/setup.bash && source /home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh && roscore" &
+ssh mtracker@MTracker "
+source /opt/ros/hydro/setup.bash;
+source /home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh;
+roscore" &
 
 #ssh mtracker@MTracker "
 #  ps cax | grep roscore > /dev/null;

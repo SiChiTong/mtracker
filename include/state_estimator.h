@@ -35,9 +35,6 @@
 
 #pragma once
 
-#define X_OFFSET 2.2
-#define Y_OFFSET 0.8
-
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -60,9 +57,9 @@ private:
   void publishTransform();
   void publishPoseStamped();
 
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
-  void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
-  void optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
+  void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& odom_pose_msg);
+  void optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& opti_pose_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
@@ -84,9 +81,9 @@ private:
   std::string world_frame_;
   std::string child_frame_;
 
-  geometry_msgs::Twist controls_;
+  geometry_msgs::Twist scaled_controls_;
   geometry_msgs::Pose2D odom_pose_;
-  geometry_msgs::Pose2D optitrack_pose_;
+  geometry_msgs::Pose2D opti_pose_;
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
 

@@ -101,8 +101,8 @@ void StateEstimator::initialize() {
 }
 
 void StateEstimator::estimateState() {
-  pose_ = optitrack_pose_;
-  velocity_ = controls_;
+  pose_ = opti_pose_;
+  velocity_ = scaled_controls_;
 }
 
 void StateEstimator::publishTransform() {
@@ -124,32 +124,31 @@ void StateEstimator::publishPoseStamped() {
   pose_stamped_pub_.publish(pose);
 }
 
-void StateEstimator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
-  controls_ = *controls_msg;
+void StateEstimator::controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg) {
+  scaled_controls_ = *scaled_controls_msg;
 }
 
-void StateEstimator::odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
-  odom_pose_ = *pose_msg;
+void StateEstimator::odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& odom_pose_msg) {
+  odom_pose_ = *odom_pose_msg;
 }
 
-void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
-  double prev_theta = optitrack_pose_.theta;
-  double prev_theta_aux = atan2(sin(optitrack_pose_.theta), cos(optitrack_pose_.theta));
+void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& opti_pose_msg) {
+  double prev_theta = opti_pose_.theta;
+  double prev_theta_aux = atan2(sin(opti_pose_.theta), cos(opti_pose_.theta));
 
-  optitrack_pose_.x =  pose_msg->y - X_OFFSET;
-  optitrack_pose_.y = -pose_msg->x - Y_OFFSET;
-  optitrack_pose_.theta = pose_msg->theta;
+  opti_pose_.x =  opti_pose_msg->y;
+  opti_pose_.y = -opti_pose_msg->x;
+  opti_pose_.theta = opti_pose_msg->theta;
 
-  double new_theta = optitrack_pose_.theta;
-  double new_theta_aux = atan2(sin(optitrack_pose_.theta), cos(optitrack_pose_.theta));
+  double new_theta_aux = atan2(sin(opti_pose_.theta), cos(opti_pose_.theta));
   double theta_diff = new_theta_aux - prev_theta_aux;
 
   if (theta_diff < -M_PI)
-    optitrack_pose_.theta = prev_theta + theta_diff + 2.0 * M_PI;
+    opti_pose_.theta = prev_theta + theta_diff + 2.0 * M_PI;
   else if (theta_diff > M_PI)
-    optitrack_pose_.theta = prev_theta + theta_diff - 2.0 * M_PI;
+    opti_pose_.theta = prev_theta + theta_diff - 2.0 * M_PI;
   else
-    optitrack_pose_.theta = prev_theta + theta_diff;
+    opti_pose_.theta = prev_theta + theta_diff;
 }
 
 bool StateEstimator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {

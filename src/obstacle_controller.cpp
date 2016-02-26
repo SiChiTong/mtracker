@@ -52,9 +52,9 @@ ObstacleController::ObstacleController() : nh_(""), nh_local_("~"), obstacle_con
       computeControls();
       controls_pub_.publish(controls_);
 
-//      std_msgs::Float64 potential;
-//      potential.data = getV();
-//      potential_pub_.publish(potential);
+      std_msgs::Float64 potential;
+      potential.data = getV();
+      potential_pub_.publish(potential);
     }
 
     rate.sleep();
@@ -199,7 +199,7 @@ vec ObstacleController::getGradV() {
 
   double N = squared_norm_r + theta_factor;             // Numerator of V
   double D = pow(pow(N, kappa_) + getBeta(), i_kappa);  // Denominator of V
-  double D_no_kappa = pow(N, kappa_) + getBeta();  // Denominator of V
+  double D_no_kappa = pow(N, kappa_) + getBeta();       // Denominator of V
 
   // Numerator derivatives
   double dNdx = 2.0 * pose_.x * (1.0 - theta_factor / (k_w_ + squared_norm_r));
@@ -270,19 +270,19 @@ void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pos
 void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg) {
   obstacles_.clear();
 
-//  Obstacle o;
-//  for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-//    double x = obstacles_msg->centre_points[i].x;
-//    double y = obstacles_msg->centre_points[i].y;
+  Obstacle o;
+  for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
+    double x = obstacles_msg->centre_points[i].x;
+    double y = obstacles_msg->centre_points[i].y;
 
-//    if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
-//      o.x = x;
-//      o.y = y;
-//      o.r = obstacles_msg->radii[i];
+    if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
+      o.x = x;
+      o.y = y;
+      o.r = obstacles_msg->radii[i];
 
-//      obstacles_.push_back(o);
-//    }
-//  }
+      obstacles_.push_back(o);
+    }
+  }
 }
 
 bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
