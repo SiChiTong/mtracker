@@ -62,8 +62,10 @@
   </node>
 
   <node name="manual_controller" pkg="mtracker" type="manual_controller" respawn="false" required="true" output="screen" machine="MTracker">
-    <param name="k_v" value="0.4"/>
+    <param name="k_v" value="0.6"/>
     <param name="k_w" value="1.5"/>
+    <param name="use_joy" type="bool" value="true"/>
+    <param name="use_keys" type="bool" value="true"/>
   </node>
 
   <node name="controls_scaling" pkg="mtracker" type="controls_scaling" respawn="false" required="true" output="screen" machine="MTracker">

@@ -74,6 +74,9 @@ private:
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
+  std::string reference_pose_topic_;
+  std::string reference_velocity_topic_;
+
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;
 

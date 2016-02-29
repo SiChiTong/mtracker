@@ -35,11 +35,6 @@
 
 #pragma once
 
-#define X_MIN -2.0
-#define X_MAX 2.3
-#define Y_MIN -1.2
-#define Y_MAX 1.2
-
 #include <boost/filesystem.hpp>
 //#include <yaml-cpp/yaml.h>
 #include <vector>
@@ -59,6 +54,7 @@ namespace mtracker {
 
 struct Obstacle {
   Obstacle() : x(0.0), y(0.0), r(0.0) {}
+  Obstacle(double x, double y, double r) : x(x), y(y), r(r) {}
   double x, y, r;
 };
 
@@ -71,6 +67,8 @@ public:
 private:
   void initialize();
   void addLatestData();
+  void start();
+  void stop();
   void emitYamlFile();
   void emitTxtFile();
 
@@ -112,6 +110,7 @@ private:
   std::vector<geometry_msgs::Twist> scaled_controls_list_;
   std::vector< std::vector<Obstacle> > obstacles_list_;
 
+  bool recording_;
   bool use_yaml_;
   bool use_txt_;
   bool record_pose_;
@@ -122,7 +121,7 @@ private:
   bool record_potential_;
 
   int loop_rate_;
-  bool recording_data_;
+  bool data_recorder_active_;
 };
 
 } // namespace mtracker

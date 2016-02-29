@@ -66,12 +66,17 @@ private:
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
+  std::string joy_topic_;
+  std::string keys_topic_;
+  std::string controls_topic_;
+
   geometry_msgs::Twist controls_;
 
   double k_v_;  // Linear velocity gain
   double k_w_;  // Angular velocity gain
 
-  bool manual_control_active_;
+  bool use_joy_;
+  bool use_keys_;
 };
 
 } // namespace mtracker

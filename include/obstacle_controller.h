@@ -71,11 +71,11 @@ private:
   void computeControls();
 
   double getBetaWorld();          // World beta function
-  double getBeta_i(Obstacle o);   // Obstacles beta functions
+  double getBeta_i(const Obstacle& o);   // Obstacles beta functions
   double getBeta();               // Total beta function (product of all betas)
 
   arma::vec getGradBetaWorld();         // Gradient of world beta function
-  arma::vec getGradBeta_i(Obstacle o);  // Gradient of obstacles beta functions
+  arma::vec getGradBeta_i(const Obstacle& o);  // Gradient of obstacles beta functions
   arma::vec getGradBeta();              // Gradient of total beta function
 
   double getV();            // Navigation function

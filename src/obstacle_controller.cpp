@@ -111,7 +111,7 @@ double ObstacleController::getBetaWorld() {
   return pow(world_.r, 2.0) - pow(pose_.x - world_.x, 2.0) - pow(pose_.y - world_.y, 2.0);
 }
 
-double ObstacleController::getBeta_i(Obstacle o) {
+double ObstacleController::getBeta_i(const Obstacle& o) {
   return pow(pose_.x - o.x, 2.0) + pow(pose_.y - o.y, 2.0) - pow(o.r, 2.0);
 }
 
@@ -135,7 +135,7 @@ vec ObstacleController::getGradBetaWorld() {
   return gradB_0;
 }
 
-vec ObstacleController::getGradBeta_i(Obstacle o) {
+vec ObstacleController::getGradBeta_i(const Obstacle& o) {
   vec gradB_i = vec(3);
 
   gradB_i(0) = 2.0 * (pose_.x - o.x);
@@ -189,8 +189,8 @@ double ObstacleController::getV() {
 }
 
 vec ObstacleController::getGradV() {
-  vec gradV = vec(3).zeros(); // = {0.0, 0.0, 0.0};
-  vec gradB = vec(3).zeros(); // = {0.0, 0.0, 0.0};
+  vec gradV = vec(3).zeros();
+  vec gradB = vec(3).zeros();
 
   double i_kappa = 1.0 / kappa_;
 
@@ -274,11 +274,12 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
   for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
     double x = obstacles_msg->centre_points[i].x;
     double y = obstacles_msg->centre_points[i].y;
+    double r = obstacles_msg->radii[i];
 
-    if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
+    if (r > 0.0 && x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
       o.x = x;
       o.y = y;
-      o.r = obstacles_msg->radii[i];
+      o.r = r;
 
       obstacles_.push_back(o);
     }

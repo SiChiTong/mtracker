@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), start_mark_(ros::Time::now()) {
+DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), data_recorder_active_(false) {
   initialize();
 
   ROS_INFO("MTracker data recorder [OK]");
@@ -46,7 +46,7 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
   while (nh_.ok()) {
     ros::spinOnce();
 
-    if (recording_data_) {
+    if (data_recorder_active_ && recording_) {
       addLatestData();
     }
 
@@ -55,13 +55,13 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
 }
 
 DataRecorder::~DataRecorder() {
-  if (recording_data_) {
+  if (data_recorder_active_) {
     if (use_yaml_)
       emitYamlFile();
     if (use_txt_)
       emitTxtFile();
 
-    recording_data_ = false;
+    data_recorder_active_ = false;
   }
 }
 
@@ -265,13 +265,13 @@ void DataRecorder::obstaclesCallback(const obstacle_detector::Obstacles::ConstPt
       double x = obstacles_msg->centre_points[i].x;
       double y = obstacles_msg->centre_points[i].y;
 
-      if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
+      //if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
         o.x = x;
         o.y = y;
         o.r = obstacles_msg->radii[i];
 
         o_list.push_back(o);
-      }
+      //}
     }
 
     obstacles_list_.push_back(o_list);
@@ -283,7 +283,7 @@ void DataRecorder::potentialCallback(const std_msgs::Float64::ConstPtr& potentia
 }
 
 bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {
-  if (req.activate && !recording_data_) {
+  if (req.activate && !data_recorder_active_) {
     t_.clear();
     pose_list_.clear();
     ref_pose_list_.clear();
@@ -292,11 +292,11 @@ bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::R
     obstacles_list_.clear();
     potential_list_.clear();
 
-    recording_data_ = true;
+    data_recorder_active_ = true;
     start_mark_ = ros::Time::now();
   }
-  else if (!req.activate && recording_data_) {
-    recording_data_ = false;
+  else if (!req.activate && data_recorder_active_) {
+    data_recorder_active_ = false;
 
     if (use_txt_)
       emitTxtFile();
@@ -308,7 +308,23 @@ bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::R
 }
 
 bool DataRecorder::updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res) {
-  return true;
+  if (req.params.size() >= 6) {
+//    if (req.params[0])
+//      start();
+//    else
+//      stop();
+
+    record_pose_ = static_cast<bool>(req.params[1]);
+    record_reference_pose_ = static_cast<bool>(req.params[2]);
+    record_controls_ = static_cast<bool>(req.params[3]);
+    record_scaled_controls_ = static_cast<bool>(req.params[4]);
+    record_potential_ = static_cast<bool>(req.params[5]);
+    record_obstacles_ = static_cast<bool>(req.params[6]);
+
+    return true;
+  }
+  else
+    return false;
 }
 
 int main(int argc, char** argv) {
