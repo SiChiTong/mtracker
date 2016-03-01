@@ -49,10 +49,7 @@ StateEstimator::StateEstimator() : nh_(""), nh_local_("~"), state_estimator_acti
 
     if (state_estimator_active_) {
       estimateState();
-      pose_pub_.publish(pose_);
-      velocity_pub_.publish(velocity_);
-      publishPoseStamped();
-      publishTransform();
+      publish();
     }
 
     rate.sleep();
@@ -105,23 +102,23 @@ void StateEstimator::estimateState() {
   velocity_ = scaled_controls_;
 }
 
-void StateEstimator::publishTransform() {
+void StateEstimator::publish() {
+  pose_pub_.publish(pose_);
+  velocity_pub_.publish(velocity_);
+
+  geometry_msgs::PoseStamped pose_s;
+  pose_s.header.stamp = ros::Time::now();
+  pose_s.header.frame_id = child_frame_;
+
+  pose_s.pose.position.x = pose_.x;
+  pose_s.pose.position.y = pose_.y;
+  pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+
+  pose_stamped_pub_.publish(pose_s);
+
   pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
   pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
   pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), world_frame_, child_frame_));
-}
-
-void StateEstimator::publishPoseStamped() {
-  geometry_msgs::PoseStamped pose;
-
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = child_frame_;
-
-  pose.pose.position.x = pose_.x;
-  pose.pose.position.y = pose_.y;
-  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
-
-  pose_stamped_pub_.publish(pose);
 }
 
 void StateEstimator::controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg) {

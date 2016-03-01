@@ -64,17 +64,14 @@ void Simulator::initialize() {
   if (loop_rate_ > 0)
     Tp_ = 1.0 / loop_rate_;
 
-  std::string scaled_controls_topic;
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic_))
+    scaled_controls_topic_ = "scaled_controls";
 
-  std::string virtual_pose_topic;
-  if (!nh_.getParam("virtual_pose_topic", virtual_pose_topic))
-    virtual_pose_topic = "virtual_pose";
+  if (!nh_.getParam("virtual_pose_topic", virtual_pose_topic_))
+    virtual_pose_topic_ = "virtual_pose";
 
-  std::string virtual_velocity_topic;
-  if (!nh_.getParam("virtual_velocity_topic", virtual_velocity_topic))
-    virtual_velocity_topic = "virtual_velocity";
+  if (!nh_.getParam("virtual_velocity_topic", virtual_velocity_topic_))
+    virtual_velocity_topic_ = "virtual_velocity";
 
   if (!nh_local_.getParam("time_constant", Tf_))
     Tf_ = 0.1;
@@ -106,10 +103,6 @@ void Simulator::initialize() {
   if (!nh_local_.getParam("initial_theta", pose_.theta))
     pose_.theta = 0.0;
 
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &Simulator::controlsCallback, this);
-  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic, 10);
-  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic, 10);
-  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(virtual_pose_topic + "_stamped", 10);
   trigger_srv_ = nh_.advertiseService("simulator_trigger_srv", &Simulator::trigger, this);
   params_srv_ = nh_.advertiseService("simulator_params_srv", &Simulator::updateParams, this);
 }
@@ -157,16 +150,26 @@ void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_
 bool Simulator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   simulator_active_ = req.activate;
 
-  if (!simulator_active_) {
+  if (req.activate) {
+    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic_, 5, &Simulator::controlsCallback, this);
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(virtual_pose_topic_, 5);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(virtual_velocity_topic_, 5);
+    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(virtual_pose_topic_ + "_stamped", 5);
+  }
+  else {
     lagged_pose_.assign(lagged_pose_.size(), pose_);
     lagged_velocity_.assign(lagged_velocity_.size(), velocity_);
+
+    controls_sub_.shutdown();
+    pose_pub_.shutdown();
+    velocity_pub_.shutdown();
+    pose_stamped_pub_.shutdown();
   }
 
   return true;
 }
 
 bool Simulator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  // The parameters are:
   if (req.params[0] >= 0.0 && req.params[1] >= 0.0) {
     Tf_ = req.params[0];
     To_ = req.params[1];

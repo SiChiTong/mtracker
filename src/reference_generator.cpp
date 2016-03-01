@@ -179,7 +179,7 @@ bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trig
 }
 
 bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  // The parameters come as:
+  // The parameters come as follows:
   // [start, pause, update_params, trajectory_type, x, y, theta, v, T, Rx, Ry, nx, ny]
   if (req.params.size() < 13)
     return false;

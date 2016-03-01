@@ -37,11 +37,6 @@
 
 #define ARMA_DONT_USE_CXX11
 
-#define X_MIN -2.0
-#define X_MAX 2.3
-#define Y_MIN -1.2
-#define Y_MAX 1.2
-
 #include <armadillo>
 #include <vector>
 
@@ -95,6 +90,11 @@ private:
   ros::Publisher potential_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string pose_topic_;
+  std::string controls_topic_;
+  std::string obstacles_topic_;
+  std::string potential_topic_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;

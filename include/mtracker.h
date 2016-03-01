@@ -75,6 +75,10 @@ private:
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
+  std::string scaled_controls_topic_;
+  std::string odom_pose_topic_;
+  std::string odom_velocity_topic_;
+
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
   geometry_msgs::Twist controls_;

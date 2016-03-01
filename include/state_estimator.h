@@ -54,8 +54,7 @@ public:
 private:
   void initialize();
   void estimateState();
-  void publishTransform();
-  void publishPoseStamped();
+  void publish();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
   void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& odom_pose_msg);

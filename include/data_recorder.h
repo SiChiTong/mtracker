@@ -54,7 +54,6 @@ namespace mtracker {
 
 struct Obstacle {
   Obstacle() : x(0.0), y(0.0), r(0.0) {}
-  Obstacle(double x, double y, double r) : x(x), y(y), r(r) {}
   double x, y, r;
 };
 
@@ -66,9 +65,9 @@ public:
 
 private:
   void initialize();
-  void addLatestData();
   void start();
   void stop();
+  void addLatestData();
   void emitYamlFile();
   void emitTxtFile();
 
@@ -92,6 +91,13 @@ private:
   ros::Subscriber potential_sub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string pose_topic_;
+  std::string reference_pose_topic_;
+  std::string controls_topic_;
+  std::string scaled_controls_topic_;
+  std::string obstacles_topic_;
+  std::string potential_topic_;
 
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Pose2D ref_pose_;
@@ -121,7 +127,6 @@ private:
   bool record_potential_;
 
   int loop_rate_;
-  bool data_recorder_active_;
 };
 
 } // namespace mtracker
