@@ -60,7 +60,7 @@ private:
   void stop();
   void pause();
   void update(double dt);
-  void publish();
+  void publishAll();
 
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);

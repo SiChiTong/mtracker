@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(false), time_(0.0) {
+ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(false) {
   initialize();
 
   ROS_INFO("Reference generator [OK]");
@@ -55,7 +55,7 @@ ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_ge
       if (!paused_)
         update(dt);
 
-      publish();
+      publishAll();
     }
 
     rate.sleep();
@@ -102,6 +102,7 @@ void ReferenceGenerator::initialize() {
       trajectory_ = new Trajectory(0.0, 0.0, 0.0); break;
   }
 
+  time_ =   0.0;
   update(0.0);
 
   trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
@@ -141,7 +142,7 @@ void ReferenceGenerator::update(double dt) {
     pose_.theta = prev_theta + theta_diff;
 }
 
-void ReferenceGenerator::publish() {
+void ReferenceGenerator::publishAll() {
   pose_pub_.publish(pose_);
   velocity_pub_.publish(velocity_);
 
@@ -149,16 +150,16 @@ void ReferenceGenerator::publish() {
   tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
   tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), world_frame_, child_frame_));
 
-  geometry_msgs::PoseStamped pose;
+  geometry_msgs::PoseStamped pose_s;
 
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = child_frame_;
+  pose_s.header.stamp = ros::Time::now();
+  pose_s.header.frame_id = child_frame_;
 
-  pose.pose.position.x = pose_.x;
-  pose.pose.position.y = pose_.y;
-  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+  pose_s.pose.position.x = pose_.x;
+  pose_s.pose.position.y = pose_.y;
+  pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
 
-  pose_stamped_pub_.publish(pose);
+  pose_stamped_pub_.publish(pose_s);
 }
 
 bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {

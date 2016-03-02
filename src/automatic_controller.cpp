@@ -49,7 +49,7 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~"), automatic_
 
     if (automatic_controller_active_) {
       computeControls();
-      controls_pub_.publish(controls_);
+      publishAll();
     }
 
     rate.sleep();
@@ -97,6 +97,10 @@ void AutomaticController::computeControls() {
 
   controls_.linear.x = v;
   controls_.angular.z = w;
+}
+
+void AutomaticController::publishAll() {
+  controls_pub_.publish(controls_);
 }
 
 void AutomaticController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {

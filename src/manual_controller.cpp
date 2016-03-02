@@ -108,15 +108,17 @@ bool ManualController::trigger(mtracker::Trigger::Request &req, mtracker::Trigge
 
 bool ManualController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
   if (req.params.size() >= 4) {
-    k_v_ = req.params[0];
-    k_w_ = req.params[1];
-    use_joy_ = static_cast<bool>(req.params[2]);
-    use_keys_ = static_cast<bool>(req.params[3]);
+    if (req.params[0] >= 0.0 && req.params[1] >= 0.0 && req.params[2] >= 0.0 && req.params[3] >= 0.0) {
+      k_v_ = req.params[0];
+      k_w_ = req.params[1];
+      use_joy_ = static_cast<bool>(req.params[2]);
+      use_keys_ = static_cast<bool>(req.params[3]);
 
-    return true;
+      return true;
+    }
+    else
+      return false;
   }
-  else
-    return false;
 }
 
 int main(int argc, char** argv) {

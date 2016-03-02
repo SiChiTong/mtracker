@@ -49,7 +49,7 @@ StateEstimator::StateEstimator() : nh_(""), nh_local_("~"), state_estimator_acti
 
     if (state_estimator_active_) {
       estimateState();
-      publish();
+      publishAll();
     }
 
     rate.sleep();
@@ -60,25 +60,20 @@ void StateEstimator::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string scaled_controls_topic;
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic_))
+    scaled_controls_topic_ = "scaled_controls";
 
-  std::string odom_pose_topic;
-  if (!nh_.getParam("odom_pose_topic", odom_pose_topic))
-    odom_pose_topic = "odom_pose";
+  if (!nh_.getParam("odom_pose_topic", odom_pose_topic_))
+    odom_pose_topic_ = "odom_pose";
 
-  std::string optitrack_pose_topic;
-  if (!nh_.getParam("optitrack_pose_topic", optitrack_pose_topic))
-    optitrack_pose_topic = "optitrack_pose";
+  if (!nh_.getParam("optitrack_pose_topic", optitrack_pose_topic_))
+    optitrack_pose_topic_ = "optitrack_pose";
 
-  std::string velocity_topic;
-  if (!nh_.getParam("velocity_topic", velocity_topic))
-    velocity_topic = "velocity";
+  if (!nh_.getParam("velocity_topic", velocity_topic_))
+    velocity_topic_ = "velocity";
 
-  std::string pose_topic;
-  if (!nh_.getParam("pose_topic", pose_topic))
-    pose_topic = "pose";
+  if (!nh_.getParam("pose_topic", pose_topic_))
+    pose_topic_ = "pose";
 
   if (!nh_.getParam("world_frame", world_frame_))
     world_frame_ = "world";
@@ -86,13 +81,6 @@ void StateEstimator::initialize() {
   if (!nh_local_.getParam("child_frame", child_frame_))
     child_frame_ = "robot";
 
-  scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &StateEstimator::controlsCallback, this);
-  odom_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(odom_pose_topic, 10, &StateEstimator::odomPoseCallback, this);
-  optitrack_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(optitrack_pose_topic, 10, &StateEstimator::optitrackPoseCallback, this);
-
-  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(pose_topic, 10);
-  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(pose_topic + "_stamped", 10);
-  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(velocity_topic, 10);
   trigger_srv_ = nh_.advertiseService("state_estimator_trigger_srv", &StateEstimator::trigger, this);
   params_srv_ = nh_.advertiseService("state_estimator_params_srv", &StateEstimator::updateParams, this);
 }
@@ -102,14 +90,14 @@ void StateEstimator::estimateState() {
   velocity_ = scaled_controls_;
 }
 
-void StateEstimator::publish() {
+void StateEstimator::publishAll() {
   pose_pub_.publish(pose_);
   velocity_pub_.publish(velocity_);
 
   geometry_msgs::PoseStamped pose_s;
+
   pose_s.header.stamp = ros::Time::now();
   pose_s.header.frame_id = child_frame_;
-
   pose_s.pose.position.x = pose_.x;
   pose_s.pose.position.y = pose_.y;
   pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
@@ -150,7 +138,25 @@ void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr
 
 bool StateEstimator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   state_estimator_active_ = req.activate;
-  return true;
+
+  if (req.activate) {
+    scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic_, 10, &StateEstimator::controlsCallback, this);
+    odom_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(odom_pose_topic_, 10, &StateEstimator::odomPoseCallback, this);
+    optitrack_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(optitrack_pose_topic_, 10, &StateEstimator::optitrackPoseCallback, this);
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(pose_topic_, 10);
+    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(pose_topic_ + "_stamped", 10);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(velocity_topic_, 10);
+
+    return true;
+  }
+  else {
+    scaled_controls_sub_.shutdown();
+    odom_pose_sub_.shutdown();
+    optitrack_pose_sub_.shutdown();
+    pose_pub_.shutdown();
+    pose_stamped_pub_.shutdown();
+    velocity_pub_.shutdown();
+  }
 }
 
 bool StateEstimator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {

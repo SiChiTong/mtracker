@@ -52,6 +52,7 @@ public:
 private:
   void initialize();
   void computeControls();
+  void publishAll();
 
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);

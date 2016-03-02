@@ -296,8 +296,7 @@ bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::R
     potential_sub_ = nh_.subscribe<std_msgs::Float64>(potential_topic_, 5, &DataRecorder::potentialCallback, this);
   }
   else {
-    if (recording_)
-      stop();
+    stop();
 
     pose_sub_.shutdown();
     ref_pose_sub_.shutdown();
@@ -311,18 +310,20 @@ bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::R
 }
 
 bool DataRecorder::updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res) {
-  if (req.params.size() >= 6) {
-    if (static_cast<bool>(req.params[0]))
-      start();
-    else
-      stop();
-
+  // The parameters come as follows:
+  // [recording, rec_pose, rec_ref_pose, rec_ctrls, rec_scal_ctrls, rec_obstac, rec_poten]
+  if (req.params.size() >= 7) {
     record_pose_ = static_cast<bool>(req.params[1]);
     record_reference_pose_ = static_cast<bool>(req.params[2]);
     record_controls_ = static_cast<bool>(req.params[3]);
     record_scaled_controls_ = static_cast<bool>(req.params[4]);
     record_obstacles_ = static_cast<bool>(req.params[5]);
     record_potential_ = static_cast<bool>(req.params[6]);
+
+    if (static_cast<bool>(req.params[0]))
+      start();
+    else
+      stop();
 
     return true;
   }

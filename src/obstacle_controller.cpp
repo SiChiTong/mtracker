@@ -300,16 +300,18 @@ bool ObstacleController::updateParams(mtracker::Params::Request &req, mtracker::
   // The parameters come as follows:
   // [kappa, epsilon, k_w, b_, a]
   if (req.params.size() >= 5) {
-    kappa_ = req.params[0];
-    epsilon_ = req.params[1];
-    k_w_ = req.params[2];
-    b_dash_ = req.params[3];
-    a_ = req.params[4];
+    if (req.params[0] >= 0.0 && req.params[1] >= 0.0 && req.params[2] >= 0.0 && req.params[3] >= 0.0 && req.params[4] >= 0.0) {
+      kappa_ = req.params[0];
+      epsilon_ = req.params[1];
+      k_w_ = req.params[2];
+      b_dash_ = req.params[3];
+      a_ = req.params[4];
 
-    return true;
+      return true;
+    }
+    else
+      return false;
   }
-  else
-    return false;
 }
 
 int main(int argc, char** argv) {

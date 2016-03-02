@@ -57,7 +57,7 @@ private:
   void initialize();
   void computeVelocity();
   void computePose();
-  void publish();
+  void publishAll();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);

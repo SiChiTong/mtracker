@@ -50,7 +50,7 @@ Simulator::Simulator() : nh_(""), nh_local_("~"), simulator_active_(false) {
     if (simulator_active_) {
       computeVelocity();
       computePose();
-      publish();
+      publishAll();
     }
 
     rate.sleep();
@@ -122,7 +122,7 @@ void Simulator::computePose() {
   lagged_pose_.push_back(pose_);
 }
 
-void Simulator::publish() {
+void Simulator::publishAll() {
   geometry_msgs::Twist velocity = lagged_velocity_.front();
   geometry_msgs::Pose2D pose = lagged_pose_.front();
   geometry_msgs::PoseStamped pose_s;
@@ -170,23 +170,25 @@ bool Simulator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Resp
 }
 
 bool Simulator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  if (req.params[0] >= 0.0 && req.params[1] >= 0.0) {
-    Tf_ = req.params[0];
-    To_ = req.params[1];
+  if (req.params.size() >= 2) {
+    if (req.params[0] >= 0.0 && req.params[1] >= 0.0) {
+      Tf_ = req.params[0];
+      To_ = req.params[1];
 
-    if (To_ > Tp_) {
-      lagged_pose_.assign(static_cast<int>(To_ / Tp_), pose_);
-      lagged_velocity_.assign(static_cast<int>(To_ / Tp_), velocity_);
-    }
-    else  {
-      lagged_pose_.assign(1, pose_);
-      lagged_velocity_.assign(1, velocity_);
-    }
+      if (To_ > Tp_) {
+        lagged_pose_.assign(static_cast<int>(To_ / Tp_), pose_);
+        lagged_velocity_.assign(static_cast<int>(To_ / Tp_), velocity_);
+      }
+      else  {
+        lagged_pose_.assign(1, pose_);
+        lagged_velocity_.assign(1, velocity_);
+      }
 
-    return true;
+      return true;
+    }
+    else
+      return false;
   }
-  else
-    return false;
 }
 
 int main(int argc, char** argv) {
