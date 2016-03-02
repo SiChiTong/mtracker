@@ -33,14 +33,14 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef SERIAL_H
-#define SERIAL_H
+#pragma once
+
+#include <boost/asio.hpp>
+#include <cstdint>
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
-#include <boost/asio.hpp>
-#include <cstdint>
 
 #define FRAME_HEADER       0xAA
 #define FRAME_GROUP_NUMBER 0x00
@@ -230,5 +230,3 @@ private:
 };
 
 } // namespace mtracker
-
-#endif // SERIAL_H

@@ -35,64 +35,98 @@
 
 #pragma once
 
-#include <boost/circular_buffer.hpp>
+#include <boost/filesystem.hpp>
+//#include <yaml-cpp/yaml.h>
+#include <vector>
+#include <fstream>
+#include <string>
+#include <ctime>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 #include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <tf/transform_broadcaster.h>
 #include <mtracker/Trigger.h>
 #include <mtracker/Params.h>
+#include <obstacle_detector/Obstacles.h>
 
-namespace mtracker
-{
+namespace mtracker {
 
-class Simulator
+struct Obstacle {
+  Obstacle() : x(0.0), y(0.0), r(0.0) {}
+  double x, y, r;
+};
+
+class DataRecorder
 {
 public:
-  Simulator();
+  DataRecorder();
+  ~DataRecorder();
 
 private:
   void initialize();
-  void computeVelocity();
-  void computePose();
-  void publishAll();
+  void start();
+  void stop();
+  void addLatestData();
+  void emitYamlFile();
+  void emitTxtFile();
 
+  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
+  void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg);
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
-  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
+  void scaledControlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
+  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
+  void potentialCallback(const std_msgs::Float64::ConstPtr& potential_msg);
+  bool trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res);
+  bool updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
+  ros::Subscriber pose_sub_;
+  ros::Subscriber ref_pose_sub_;
   ros::Subscriber controls_sub_;
-  ros::Publisher pose_pub_;
-  ros::Publisher velocity_pub_;
-  ros::Publisher pose_stamped_pub_;
+  ros::Subscriber scaled_controls_sub_;
+  ros::Subscriber obstacles_sub_;
+  ros::Subscriber potential_sub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
+  std::string pose_topic_;
+  std::string reference_pose_topic_;
+  std::string controls_topic_;
   std::string scaled_controls_topic_;
-  std::string virtual_pose_topic_;
-  std::string virtual_velocity_topic_;
-
-  tf::TransformBroadcaster pose_bc_;
-  tf::Transform pose_tf_;
-
-  std::string world_frame_;
-  std::string child_frame_;
+  std::string obstacles_topic_;
+  std::string potential_topic_;
 
   geometry_msgs::Pose2D pose_;
-  geometry_msgs::Twist velocity_;
+  geometry_msgs::Pose2D ref_pose_;
   geometry_msgs::Twist controls_;
+  geometry_msgs::Twist scaled_controls_;
+  obstacle_detector::Obstacles obstacles_;
+  double potential_;
 
-  double Tp_, Tf_, To_; // Sampling time, time constant, delay
-  boost::circular_buffer<geometry_msgs::Pose2D> lagged_pose_;
-  boost::circular_buffer<geometry_msgs::Twist> lagged_velocity_;
+  ros::Time start_mark_;
+
+  std::vector<double> t_;
+  std::vector<double> potential_list_;
+  std::vector<geometry_msgs::Pose2D> pose_list_;
+  std::vector<geometry_msgs::Pose2D> ref_pose_list_;
+  std::vector<geometry_msgs::Twist> controls_list_;
+  std::vector<geometry_msgs::Twist> scaled_controls_list_;
+  std::vector< std::vector<Obstacle> > obstacles_list_;
+
+  bool recording_;
+  bool use_yaml_;
+  bool use_txt_;
+  bool record_pose_;
+  bool record_reference_pose_;
+  bool record_controls_;
+  bool record_scaled_controls_;
+  bool record_obstacles_;
+  bool record_potential_;
 
   int loop_rate_;
-  bool simulator_active_;
 };
 
 } // namespace mtracker

@@ -35,8 +35,6 @@
 
 #pragma once
 
-#include <boost/circular_buffer.hpp>
-
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -48,34 +46,39 @@
 namespace mtracker
 {
 
-class Simulator
+class StateEstimator
 {
 public:
-  Simulator();
+  StateEstimator();
 
 private:
   void initialize();
-  void computeVelocity();
-  void computePose();
+  void estimateState();
   void publishAll();
 
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
+  void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& odom_pose_msg);
+  void optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& opti_pose_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
-  ros::Subscriber controls_sub_;
+  ros::Subscriber scaled_controls_sub_;
+  ros::Subscriber odom_pose_sub_;
+  ros::Subscriber optitrack_pose_sub_;
   ros::Publisher pose_pub_;
-  ros::Publisher velocity_pub_;
   ros::Publisher pose_stamped_pub_;
+  ros::Publisher velocity_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
   std::string scaled_controls_topic_;
-  std::string virtual_pose_topic_;
-  std::string virtual_velocity_topic_;
+  std::string odom_pose_topic_;
+  std::string optitrack_pose_topic_;
+  std::string velocity_topic_;
+  std::string pose_topic_;
 
   tf::TransformBroadcaster pose_bc_;
   tf::Transform pose_tf_;
@@ -83,16 +86,14 @@ private:
   std::string world_frame_;
   std::string child_frame_;
 
+  geometry_msgs::Twist scaled_controls_;
+  geometry_msgs::Pose2D odom_pose_;
+  geometry_msgs::Pose2D opti_pose_;
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
-  geometry_msgs::Twist controls_;
-
-  double Tp_, Tf_, To_; // Sampling time, time constant, delay
-  boost::circular_buffer<geometry_msgs::Pose2D> lagged_pose_;
-  boost::circular_buffer<geometry_msgs::Twist> lagged_velocity_;
 
   int loop_rate_;
-  bool simulator_active_;
+  bool state_estimator_active_;
 };
 
 } // namespace mtracker

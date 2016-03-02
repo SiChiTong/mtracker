@@ -33,11 +33,12 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef CONTROLS_SCALING_H
-#define CONTROLS_SCALING_H
+#pragma once
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
+#include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 namespace mtracker
 {
@@ -51,20 +52,25 @@ private:
   const double ROBOT_BASE;
   const double WHEEL_RADIUS;
 
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   void initialize();
+
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
   ros::Subscriber controls_sub_;
   ros::Publisher controls_pub_;
+  ros::ServiceServer trigger_srv_;
+  ros::ServiceServer params_srv_;
 
-  geometry_msgs::Twist controls_;
+  std::string controls_topic_;
+  std::string scaled_controls_topic_;
 
-  double w_max_; // Maximal wheels angular velocity
+  double max_wheel_rate_;
+  bool controls_scaling_active_;
 };
 
 } // namespace mtracker
-
-#endif // CONTROLS_SCALING_H

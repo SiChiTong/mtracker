@@ -33,8 +33,7 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef TRAJECTORIES_H
-#define TRAJECTORIES_H
+#pragma once
 
 #include <cmath>
 #include <geometry_msgs/Pose2D.h>
@@ -47,6 +46,7 @@ class Trajectory
 {
 public:
   Trajectory() : x_0_(0.0), y_0_(0.0), phi_0_(0.0) {}
+
   Trajectory(double x, double y, double phi) : x_0_(x), y_0_(y), phi_0_(phi) {}
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
@@ -67,12 +67,6 @@ public:
     return velocity;
   }
 
-  void setOrigin(double x, double y, double phi) {
-    x_0_ = x;
-    y_0_ = y;
-    phi_0_ = phi;
-  }
-
 protected:
   double x_0_;
   double y_0_;
@@ -83,31 +77,32 @@ protected:
 class LinearTrajectory : public Trajectory
 {
 public:
-  LinearTrajectory() : v_(0.0), phi_(0.0) {}
-  LinearTrajectory(double v, double phi) : v_(v), phi_(phi) {}
-  LinearTrajectory(double x, double y, double v, double phi) : Trajectory(x, y, phi), v_(v), phi_(phi) {}
+  LinearTrajectory() : v_(0.0) {}
+
+  LinearTrajectory(double phi, double v) : Trajectory(0.0, 0.0, phi), v_(v) {}
+
+  LinearTrajectory(double x, double y, double phi, double v) : Trajectory(x, y, phi), v_(v) {}
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
-    pose.x = x_0_ + v_ * cos(phi_) * t;
-    pose.y = y_0_ + v_ * sin(phi_) * t;
-    pose.theta = phi_;
+    pose.x = x_0_ + v_ * cos(phi_0_) * t;
+    pose.y = y_0_ + v_ * sin(phi_0_) * t;
+    pose.theta = phi_0_;
 
     return pose;
   }
 
   virtual geometry_msgs::Twist calculateVelocity(double t) {
     geometry_msgs::Twist velocity;
-    velocity.linear.x = v_ * cos(phi_);
-    velocity.linear.y = v_ * sin(phi_);
+    velocity.linear.x = v_ * cos(phi_0_);
+    velocity.linear.y = v_ * sin(phi_0_);
     velocity.angular.z = 0.0;
 
     return velocity;
   }
 
 protected:
-  double v_;         // Velocity [m/s]
-  double phi_;       // Orientation [rad]
+  double v_;    // Speed [m/s]
 };
 
 
@@ -115,12 +110,14 @@ class HarmonicTrajectory : public Trajectory
 {
 public:
   HarmonicTrajectory() : w_(0.0), r_x_(0.0), r_y_(0.0), n_x_(0.0), n_y_(0.0) {}
+
   HarmonicTrajectory(double T, double r_x, double r_y, int n_x, int n_y) :
-    Trajectory(0.0, 0.0, M_PI_2), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+    r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
+    { (T > 0.0) ? w_ = 2.0 * M_PI / T : w_ = 0.0; }
+
   HarmonicTrajectory(double x, double y, double T, double r_x, double r_y, int n_x, int n_y) :
-    Trajectory(x, y, M_PI_2), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+    Trajectory(x, y, 0.0), r_x_(r_x), r_y_(r_y), n_x_(n_x), n_y_(n_y)
+    { (T > 0.0) ? w_ = 2.0 * M_PI / T : w_ = 0.0; }
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
@@ -135,7 +132,9 @@ public:
     geometry_msgs::Twist velocity;
     velocity.linear.x = -r_x_ * n_x_ * w_ * sin(n_x_ * w_ * t);
     velocity.linear.y =  r_y_ * n_y_ * w_ * cos(n_y_ * w_ * t);
-    velocity.angular.z = (-r_y_ * pow(n_y_, 2.0) * pow(w_, 2.0) * sin(n_y_ * w_ * t) * velocity.linear.x -
+
+    if (pow(velocity.linear.x, 2.0) + pow(velocity.linear.y, 2.0) > 0.0)
+      velocity.angular.z = (-r_y_ * pow(n_y_, 2.0) * pow(w_, 2.0) * sin(n_y_ * w_ * t) * velocity.linear.x -
                   -r_x_ * pow(n_x_, 2.0) * pow(w_, 2.0) * cos(n_x_ * w_ * t) * velocity.linear.y) /
                  (pow(velocity.linear.x, 2.0) + pow(velocity.linear.y, 2.0));
 
@@ -144,44 +143,81 @@ public:
 
 protected:
   double w_;           // Frequency [rad/s]
-  int n_x_, n_y_;      // Frequency multipliers [-]
   double r_x_, r_y_;   // Radii [m]
+  int n_x_, n_y_;      // Frequency multipliers [-]
 };
 
 
 class LemniscateTrajectory : public Trajectory
 {
 public:
-  LemniscateTrajectory() : w_(0.0), a_(0.0), b_(0.0) {}
-  LemniscateTrajectory(double T, double a, double b) : a_(a), b_(b)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
-  LemniscateTrajectory(double x, double y, double T, double a, double b) : Trajectory(x, y, M_PI_2), a_(a), b_(b)
-    { (T != 0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+  LemniscateTrajectory() : w_(0.0), r_x_(0.0), r_y_(0.0), a_(0.0), b_(0.0) {}
+
+  LemniscateTrajectory(double T, double r_x, double r_y, double a, double b) :
+    r_x_(r_x), r_y_(r_y), a_(a), b_(b)
+    { (T > 0.0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
+
+  LemniscateTrajectory(double x, double y, double T, double r_x, double r_y, double a, double b) :
+    Trajectory(x, y, 0.0), r_x_(r_x), r_y_(r_y), a_(a), b_(b)
+    { (T > 0.0) ? w_ = 2 * M_PI / T : w_ = 0.0; }
 
   virtual geometry_msgs::Pose2D calculatePose(double t) {
     geometry_msgs::Pose2D pose;
-    pose.x = 0.0;
-    pose.y = 0.0;
-    pose.theta = 0.0;
+
+    double B_aux = pow(b_, 4.0) - pow(a_, 2.0) * pow(sin(2.0 * w_ * t), 2.0);
+    double B;
+    if (B_aux >= 0.0)
+      B = sqrt(B_aux);
+    else
+      B = sqrt(-B_aux);
+
+    double C = pow(a_, 2.0) * cos(2.0 * w_ * t) + B;
+    double dC_dt;
+    if (C != 0.0 && B != 0.0)
+      dC_dt = -(pow(a_, 2.0) * w_ / C) * (sin(2.0 * w_ * t) + sin(4.0 * w_ * t) / (2.0 * B));
+    else
+      dC_dt = 1.0;
+
+    double vx = -r_x_ * w_ * sin(w_ * t) * C + r_x_ * cos(w_ * t) * dC_dt;
+    double vy =  r_y_ * w_ * cos(w_ * t) * C + r_x_ * sin(w_ * t) * dC_dt;
+
+    pose.x = r_x_ * cos(w_ * t) * C;
+    pose.y = r_y_ * sin(w_ * t) * C;
+    pose.theta = atan2(vy, vx);
 
     return pose;
   }
 
   virtual geometry_msgs::Twist calculateVelocity(double t) {
     geometry_msgs::Twist velocity;
-    velocity.linear.x = 0.0;
-    velocity.linear.y = 0.0;
-    velocity.angular.z = 0.0;
+
+    double B_aux = pow(b_, 4.0) - pow(a_, 2.0) * pow(sin(2.0 * w_ * t), 2.0);
+    double B;
+    if (B_aux >= 0.0)
+      B = sqrt(B_aux);
+    else
+      B = sqrt(-B_aux);
+
+    double C = pow(a_, 2.0) * cos(2.0 * w_ * t) + B;
+    double dC_dt;
+    if (C != 0.0 && B != 0.0)
+      dC_dt = -(pow(a_, 2.0) * w_ / C) * (sin(2.0 * w_ * t) + sin(4.0 * w_ * t) / (2.0 * B));
+    else
+      dC_dt = 1.0;
+
+    velocity.linear.x = -r_x_ * w_ * sin(w_ * t) * C + r_x_ * cos(w_ * t) * dC_dt;
+    velocity.linear.y =  r_y_ * w_ * cos(w_ * t) * C + r_x_ * sin(w_ * t) * dC_dt;
+    velocity.angular.z = 0.0; // TODO calculate this
 
     return velocity;
   }
 
 protected:
   double w_;      // Frequency [rad/s]
+  double r_x_;    // Radii [m]
+  double r_y_;
   double a_;      // Separation of focal [m]
   double b_;      // Distance (product) [m]
 };
 
 } // namespace mtracker
-
-#endif // TRAJECTORIES_H

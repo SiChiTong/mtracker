@@ -30,69 +30,82 @@
  */
 
 /*
- * Author: Mateusz Przybyla
+ * Author: Mateusz Przybyla and Wojciech Kowalczyk
  */
 
 #pragma once
 
-#include <boost/circular_buffer.hpp>
+#define ARMA_DONT_USE_CXX11
+
+#include <armadillo>
+#include <vector>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 #include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <tf/transform_broadcaster.h>
 #include <mtracker/Trigger.h>
 #include <mtracker/Params.h>
+#include <obstacle_detector/Obstacles.h>
 
 namespace mtracker
 {
 
-class Simulator
+struct Obstacle {
+  Obstacle() : x(0.0), y(0.0), r(0.0) {}
+  double x, y, r;
+};
+
+class ObstacleController
 {
 public:
-  Simulator();
+  ObstacleController();
 
 private:
   void initialize();
-  void computeVelocity();
-  void computePose();
-  void publishAll();
+  void computeControls();
 
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  double getBetaWorld();          // World beta function
+  double getBeta_i(const Obstacle& o);   // Obstacles beta functions
+  double getBeta();               // Total beta function (product of all betas)
+
+  arma::vec getGradBetaWorld();         // Gradient of world beta function
+  arma::vec getGradBeta_i(const Obstacle& o);  // Gradient of obstacles beta functions
+  arma::vec getGradBeta();              // Gradient of total beta function
+
+  double getV();            // Navigation function
+  arma::vec getGradV();     // Gradient of navigation function
+
+  void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
+  void obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
 
-  ros::Subscriber controls_sub_;
-  ros::Publisher pose_pub_;
-  ros::Publisher velocity_pub_;
-  ros::Publisher pose_stamped_pub_;
+  ros::Subscriber pose_sub_;
+  ros::Subscriber obstacles_sub_;
+  ros::Publisher controls_pub_;
+  ros::Publisher potential_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
-  std::string scaled_controls_topic_;
-  std::string virtual_pose_topic_;
-  std::string virtual_velocity_topic_;
+  std::string pose_topic_;
+  std::string controls_topic_;
+  std::string obstacles_topic_;
+  std::string potential_topic_;
 
-  tf::TransformBroadcaster pose_bc_;
-  tf::Transform pose_tf_;
-
-  std::string world_frame_;
-  std::string child_frame_;
-
-  geometry_msgs::Pose2D pose_;
-  geometry_msgs::Twist velocity_;
   geometry_msgs::Twist controls_;
+  geometry_msgs::Pose2D pose_;
 
-  double Tp_, Tf_, To_; // Sampling time, time constant, delay
-  boost::circular_buffer<geometry_msgs::Pose2D> lagged_pose_;
-  boost::circular_buffer<geometry_msgs::Twist> lagged_velocity_;
+  Obstacle world_;                   // Negative obstacle containing world
+  std::vector<Obstacle> obstacles_;  // List of obstacles
+
+  double a_, b_dash_, k_w_, epsilon_, kappa_;   // Constant parameters
 
   int loop_rate_;
-  bool simulator_active_;
+  bool obstacle_controller_active_;
 };
 
 } // namespace mtracker

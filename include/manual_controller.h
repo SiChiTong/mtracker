@@ -33,12 +33,13 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef MANUAL_CONTROLLER_H
-#define MANUAL_CONTROLLER_H
+#pragma once
 
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
+#include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 namespace mtracker
 {
@@ -49,9 +50,12 @@ public:
   ManualController();
 
 private:
+  void initialize();
+
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
   void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg);
-  void initialize();
+  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -59,13 +63,20 @@ private:
   ros::Subscriber joy_sub_;
   ros::Subscriber keys_sub_;
   ros::Publisher controls_pub_;
+  ros::ServiceServer trigger_srv_;
+  ros::ServiceServer params_srv_;
+
+  std::string joy_topic_;
+  std::string keys_topic_;
+  std::string controls_topic_;
 
   geometry_msgs::Twist controls_;
 
-  double v_gain_;  // Linear velocity gain
-  double w_gain_;  // Angular velocity gain
+  double k_v_;  // Linear velocity gain
+  double k_w_;  // Angular velocity gain
+
+  bool use_joy_;
+  bool use_keys_;
 };
 
 } // namespace mtracker
-
-#endif // MANUAL_CONTROLLER_H

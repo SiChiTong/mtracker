@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025) {
+MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), mtracker_active_(false) {
   initialize();
 
   com_ = new Serial("/dev/ttyUSB0");
@@ -53,7 +53,7 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
   }
   else {
     ROS_INFO("Could not open COM port.");
-    ros::shutdown();
+    nh_.shutdown();
   }
 
   ros::Rate rate(loop_rate_);
@@ -61,13 +61,12 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
   while (nh_.ok()) {
     ros::spinOnce();
 
-    transferData();
+    if (mtracker_active_) {
+      transferData();
 
-    pose_pub_.publish(pose_);
-    velocity_pub_.publish(velocity_);
-
-    publishTransform();
-    publishPoseStamped();
+      pose_pub_.publish(pose_);
+      velocity_pub_.publish(velocity_);
+    }
 
     rate.sleep();
   }
@@ -81,30 +80,21 @@ MTracker::~MTracker() {
   delete com_;
 }
 
-void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
-  controls_ = *controls_msg;
-}
-
 void MTracker::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string scaled_controls_topic;
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic_))
+    scaled_controls_topic_ = "scaled_controls";
 
-  std::string odom_pose_topic;
-  if (!nh_.getParam("odom_pose_topic", odom_pose_topic))
-    odom_pose_topic = "odom_pose";
+  if (!nh_.getParam("odom_pose_topic", odom_pose_topic_))
+    odom_pose_topic_ = "odom_pose";
 
-  std::string odom_velocity_topic;
-  if (!nh_.getParam("odom_velocity_topic", odom_velocity_topic))
-    odom_velocity_topic = "odom_velocity";
+  if (!nh_.getParam("odom_velocity_topic", odom_velocity_topic_))
+    odom_velocity_topic_ = "odom_velocity";
 
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &MTracker::controlsCallback, this);
-  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
-  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
-  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(odom_pose_topic + "_stamped", 10);
+  trigger_srv_ = nh_.advertiseService("mtracker_trigger_srv", &MTracker::trigger, this);
+  params_srv_ = nh_.advertiseService("mtracker_params_srv", &MTracker::updateParams, this);
 }
 
 void MTracker::transferData() {
@@ -124,23 +114,33 @@ void MTracker::transferData() {
   velocity_.angular.z = (w_r - w_l) * WHEEL_RADIUS / ROBOT_BASE;
 }
 
-void MTracker::publishTransform() {
-  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromRPY(0.0, 0.0, pose_.theta));
-  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), "world", "odometry"));
+void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg) {
+  controls_ = *controls_msg;
 }
 
-void MTracker::publishPoseStamped() {
-  geometry_msgs::PoseStamped pose;
+bool MTracker::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+  mtracker_active_ = req.activate;
 
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = "odometry";
+  if (req.activate) {
+    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic_, 5, &MTracker::controlsCallback, this);
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic_, 5);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic_, 5);
+  }
+  else {
+    com_->setVelocities(0.0, 0.0);
+    com_->writeFrame();
+    com_->readFrame();
 
-  pose.pose.position.x = pose_.x;
-  pose.pose.position.y = pose_.y;
-  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+    controls_sub_.shutdown();
+    pose_pub_.shutdown();
+    velocity_pub_.shutdown();
+  }
 
-  pose_stamped_pub_.publish(pose);
+  return true;
+}
+
+bool MTracker::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+  return true;
 }
 
 int main(int argc, char** argv) {

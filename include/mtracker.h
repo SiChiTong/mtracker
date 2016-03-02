@@ -33,17 +33,16 @@
  * Author: Mateusz Przybyla
  */
 
-#ifndef MTRACKER_H
-#define MTRACKER_H
+#pragma once
+
+#include <signal.h>
+#include <memory>
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <tf/transform_broadcaster.h>
-#include <std_srvs/Empty.h>
-#include <signal.h>
-#include <memory>
+#include <mtracker/Trigger.h>
+#include <mtracker/Params.h>
 
 #include "serial.h"
 
@@ -60,12 +59,12 @@ private:
   const double ROBOT_BASE;
   const double WHEEL_RADIUS;
 
-  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
-
   void initialize();
   void transferData();
-  void publishTransform();
-  void publishPoseStamped();
+
+  void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
+  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
+  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -73,10 +72,12 @@ private:
   ros::Subscriber controls_sub_;
   ros::Publisher pose_pub_;
   ros::Publisher velocity_pub_;
-  ros::Publisher pose_stamped_pub_;
+  ros::ServiceServer trigger_srv_;
+  ros::ServiceServer params_srv_;
 
-  tf::TransformBroadcaster pose_bc_;
-  tf::Transform pose_tf_;
+  std::string scaled_controls_topic_;
+  std::string odom_pose_topic_;
+  std::string odom_velocity_topic_;
 
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
@@ -85,8 +86,7 @@ private:
   Serial* com_;
 
   int loop_rate_;
+  bool mtracker_active_;
 };
 
 } // namespace mtracker
-
-#endif // MTRACKER_H
