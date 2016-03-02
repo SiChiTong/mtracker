@@ -65,24 +65,20 @@ void ObstacleController::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string pose_topic;
-  if (!nh_.getParam("pose_topic", pose_topic))
-    pose_topic = "pose";
+  if (!nh_.getParam("pose_topic", pose_topic_))
+    pose_topic_ = "pose";
 
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  if (!nh_.getParam("controls_topic", controls_topic_))
+    controls_topic_ = "controls";
 
-  std::string obstacles_topic;
-  if (!nh_.getParam("obstacles_topic", obstacles_topic))
-    obstacles_topic = "obstacles";
+  if (!nh_.getParam("obstacles_topic", obstacles_topic_))
+    obstacles_topic_ = "obstacles";
 
-  std::string potential_topic;
-  if (!nh_.getParam("potential_topic", potential_topic))
-    potential_topic = "potential";
+  if (!nh_.getParam("potential_topic", potential_topic_))
+    potential_topic_ = "potential";
 
   if (!nh_local_.getParam("world_radius", world_.r))
-    world_.r = 5.0;
+    world_.r = 3.0;
 
   if (!nh_local_.getParam("kappa", kappa_))
     kappa_ = 3.0;
@@ -94,15 +90,11 @@ void ObstacleController::initialize() {
     k_w_ = 0.1;
 
   if (!nh_local_.getParam("b_", b_dash_))
-    b_dash_ = 5.0;
+    b_dash_ = 2.5;
 
   if (!nh_local_.getParam("a", a_))
-    a_ = 1.0;
+    a_ = 0.5;
 
-  pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &ObstacleController::poseCallback, this);
-  obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic, 10, &ObstacleController::obstaclesCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
-  potential_pub_ = nh_.advertise<std_msgs::Float64>(potential_topic, 10);
   trigger_srv_ = nh_.advertiseService("obstacle_controller_trigger_srv", &ObstacleController::trigger, this);
   params_srv_ = nh_.advertiseService("obstacle_controller_params_srv", &ObstacleController::updateParams, this);
 }
@@ -111,7 +103,7 @@ double ObstacleController::getBetaWorld() {
   return pow(world_.r, 2.0) - pow(pose_.x - world_.x, 2.0) - pow(pose_.y - world_.y, 2.0);
 }
 
-double ObstacleController::getBeta_i(Obstacle o) {
+double ObstacleController::getBeta_i(const Obstacle& o) {
   return pow(pose_.x - o.x, 2.0) + pow(pose_.y - o.y, 2.0) - pow(o.r, 2.0);
 }
 
@@ -135,7 +127,7 @@ vec ObstacleController::getGradBetaWorld() {
   return gradB_0;
 }
 
-vec ObstacleController::getGradBeta_i(Obstacle o) {
+vec ObstacleController::getGradBeta_i(const Obstacle& o) {
   vec gradB_i = vec(3);
 
   gradB_i(0) = 2.0 * (pose_.x - o.x);
@@ -189,8 +181,8 @@ double ObstacleController::getV() {
 }
 
 vec ObstacleController::getGradV() {
-  vec gradV = vec(3).zeros(); // = {0.0, 0.0, 0.0};
-  vec gradB = vec(3).zeros(); // = {0.0, 0.0, 0.0};
+  vec gradV = vec(3).zeros();
+  vec gradB = vec(3).zeros();
 
   double i_kappa = 1.0 / kappa_;
 
@@ -265,6 +257,7 @@ void ObstacleController::computeControls() {
 
 void ObstacleController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
   pose_ = *pose_msg;
+  pose_.theta = atan2(sin(pose_.theta), cos(pose_.theta));  // Range the orientation in +/- pi
 }
 
 void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::ConstPtr& obstacles_msg) {
@@ -272,42 +265,53 @@ void ObstacleController::obstaclesCallback(const obstacle_detector::Obstacles::C
 
   Obstacle o;
   for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-    double x = obstacles_msg->centre_points[i].x;
-    double y = obstacles_msg->centre_points[i].y;
+    o.x = obstacles_msg->centre_points[i].x;
+    o.y = obstacles_msg->centre_points[i].y;
+    o.r = obstacles_msg->radii[i];
 
-    if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
-      o.x = x;
-      o.y = y;
-      o.r = obstacles_msg->radii[i];
-
-      obstacles_.push_back(o);
-    }
+    obstacles_.push_back(o);
   }
 }
 
 bool ObstacleController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   obstacle_controller_active_ = req.activate;
 
-  if (!obstacle_controller_active_) {
+  if (req.activate) {
+    pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic_, 5, &ObstacleController::poseCallback, this);
+    obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic_, 5, &ObstacleController::obstaclesCallback, this);
+    controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic_, 5);
+    potential_pub_ = nh_.advertise<std_msgs::Float64>(potential_topic_, 5);
+  }
+  else {
     controls_.linear.x = 0.0;
     controls_.angular.z = 0.0;
     controls_pub_.publish(controls_);
+
+    pose_sub_.shutdown();
+    obstacles_sub_.shutdown();
+    controls_pub_.shutdown();
+    potential_pub_.shutdown();
   }
 
   return true;
 }
 
 bool ObstacleController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  if (req.params[0] >= 0.0 && req.params[1] >= 0.0 && req.params[2] >= 0.0 && req.params[3] >= 0.0 && req.params[4] >= 0.0) {
-    kappa_ = req.params[0];
-    epsilon_ = req.params[1];
-    k_w_ = req.params[2];
-    b_dash_ = req.params[3];
-    a_ = req.params[4];
-    return true;
+  // The parameters come as follows:
+  // [kappa, epsilon, k_w, b_, a]
+  if (req.params.size() >= 5) {
+    if (req.params[0] >= 0.0 && req.params[1] >= 0.0 && req.params[2] >= 0.0 && req.params[3] >= 0.0 && req.params[4] >= 0.0) {
+      kappa_ = req.params[0];
+      epsilon_ = req.params[1];
+      k_w_ = req.params[2];
+      b_dash_ = req.params[3];
+      a_ = req.params[4];
+
+      return true;
+    }
+    else
+      return false;
   }
-  else
-    return false;
 }
 
 int main(int argc, char** argv) {

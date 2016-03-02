@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(false), time_(0.0) {
+ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_generator_active_(false) {
   initialize();
 
   ROS_INFO("Reference generator [OK]");
@@ -55,8 +55,9 @@ ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~"), reference_ge
       if (!paused_)
         update(dt);
 
-      publish();
+      publishAll();
     }
+
     rate.sleep();
   }
 }
@@ -69,20 +70,11 @@ void ReferenceGenerator::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string reference_pose_topic;
-  if (!nh_.getParam("reference_pose_topic", reference_pose_topic))
-    reference_pose_topic = "reference_pose";
+  if (!nh_.getParam("reference_pose_topic", reference_pose_topic_))
+    reference_pose_topic_ = "reference_pose";
 
-  std::string reference_velocity_topic;
-  if (!nh_.getParam("reference_velocity_topic", reference_velocity_topic))
-    reference_velocity_topic = "reference_velocity";
-
-  int trajectory_type;
-  if (!nh_local_.getParam("trajectory_type", trajectory_type))
-    trajectory_type = 0;
-
-  if (!nh_local_.getParam("trajectory_paused", paused_))
-    paused_ = false;
+  if (!nh_.getParam("reference_velocity_topic", reference_velocity_topic_))
+    reference_velocity_topic_ = "reference_velocity";
 
   if (!nh_.getParam("world_frame", world_frame_))
     world_frame_ = "world";
@@ -90,11 +82,12 @@ void ReferenceGenerator::initialize() {
   if (!nh_local_.getParam("child_frame", child_frame_))
     child_frame_ = "reference";
 
-  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic, 10);
-  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic, 10);
-  pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic + "_stamped", 10);
-  trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
-  params_srv_ = nh_.advertiseService("reference_generator_params_srv", &ReferenceGenerator::updateParams, this);
+  int trajectory_type;
+  if (!nh_local_.getParam("trajectory_type", trajectory_type))
+    trajectory_type = 0;
+
+  if (!nh_local_.getParam("trajectory_paused", paused_))
+    paused_ = false;
 
   switch (trajectory_type) {
     case 0:
@@ -109,7 +102,11 @@ void ReferenceGenerator::initialize() {
       trajectory_ = new Trajectory(0.0, 0.0, 0.0); break;
   }
 
+  time_ =   0.0;
   update(0.0);
+
+  trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
+  params_srv_ = nh_.advertiseService("reference_generator_params_srv", &ReferenceGenerator::updateParams, this);
 }
 
 void ReferenceGenerator::start() {
@@ -145,7 +142,7 @@ void ReferenceGenerator::update(double dt) {
     pose_.theta = prev_theta + theta_diff;
 }
 
-void ReferenceGenerator::publish() {
+void ReferenceGenerator::publishAll() {
   pose_pub_.publish(pose_);
   velocity_pub_.publish(velocity_);
 
@@ -153,25 +150,41 @@ void ReferenceGenerator::publish() {
   tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
   tf_br_.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), world_frame_, child_frame_));
 
-  geometry_msgs::PoseStamped pose;
+  geometry_msgs::PoseStamped pose_s;
 
-  pose.header.stamp = ros::Time::now();
-  pose.header.frame_id = child_frame_;
+  pose_s.header.stamp = ros::Time::now();
+  pose_s.header.frame_id = child_frame_;
 
-  pose.pose.position.x = pose_.x;
-  pose.pose.position.y = pose_.y;
-  pose.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+  pose_s.pose.position.x = pose_.x;
+  pose_s.pose.position.y = pose_.y;
+  pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
 
-  pose_stamped_pub_.publish(pose);
+  pose_stamped_pub_.publish(pose_s);
 }
 
 bool ReferenceGenerator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   reference_generator_active_ = req.activate;
+
+  if (req.activate) {
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(reference_pose_topic_, 5);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(reference_velocity_topic_, 5);
+    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(reference_pose_topic_ + "_stamped", 5);
+  }
+  else {
+    pose_pub_.shutdown();
+    velocity_pub_.shutdown();
+    pose_stamped_pub_.shutdown();
+  }
+
   return true;
 }
 
 bool ReferenceGenerator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  // The parameters come as: [start, pause, update_params, trajectory_type, x, y, theta, v, T, Rx, Ry, nx, ny]
+  // The parameters come as follows:
+  // [start, pause, update_params, trajectory_type, x, y, theta, v, T, Rx, Ry, nx, ny]
+  if (req.params.size() < 13)
+    return false;
+
   if (req.params[2]) {
     if (req.params[3] == 0.0) {         // Point trajectory
       delete trajectory_;

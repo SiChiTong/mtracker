@@ -57,7 +57,7 @@ private:
   void initialize();
   void computeVelocity();
   void computePose();
-  void publish();
+  void publishAll();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
@@ -72,6 +72,10 @@ private:
   ros::Publisher pose_stamped_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string scaled_controls_topic_;
+  std::string virtual_pose_topic_;
+  std::string virtual_velocity_topic_;
 
   tf::TransformBroadcaster pose_bc_;
   tf::Transform pose_tf_;

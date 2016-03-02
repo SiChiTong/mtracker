@@ -54,8 +54,7 @@ public:
 private:
   void initialize();
   void estimateState();
-  void publishTransform();
-  void publishPoseStamped();
+  void publishAll();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
   void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& odom_pose_msg);
@@ -74,6 +73,12 @@ private:
   ros::Publisher velocity_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string scaled_controls_topic_;
+  std::string odom_pose_topic_;
+  std::string optitrack_pose_topic_;
+  std::string velocity_topic_;
+  std::string pose_topic_;
 
   tf::TransformBroadcaster pose_bc_;
   tf::Transform pose_tf_;

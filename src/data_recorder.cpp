@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), start_mark_(ros::Time::now()) {
+DataRecorder::DataRecorder() : nh_(""), nh_local_("~") {
   initialize();
 
   ROS_INFO("MTracker data recorder [OK]");
@@ -46,7 +46,7 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
   while (nh_.ok()) {
     ros::spinOnce();
 
-    if (recording_data_) {
+    if (recording_) {
       addLatestData();
     }
 
@@ -55,43 +55,31 @@ DataRecorder::DataRecorder() : nh_(""), nh_local_("~"), recording_data_(false), 
 }
 
 DataRecorder::~DataRecorder() {
-  if (recording_data_) {
-    if (use_yaml_)
-      emitYamlFile();
-    if (use_txt_)
-      emitTxtFile();
-
-    recording_data_ = false;
-  }
+  if (recording_)
+    stop();
 }
 
 void DataRecorder::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string pose_topic;
-  if (!nh_.getParam("pose_topic", pose_topic))
-    pose_topic = "pose";
+  if (!nh_.getParam("pose_topic", pose_topic_))
+    pose_topic_ = "pose";
 
-  std::string reference_pose_topic;
-  if (!nh_.getParam("reference_pose_topic", reference_pose_topic))
-    reference_pose_topic = "reference_pose";
+  if (!nh_.getParam("reference_pose_topic", reference_pose_topic_))
+    reference_pose_topic_ = "reference_pose";
 
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  if (!nh_.getParam("controls_topic", controls_topic_))
+    controls_topic_ = "controls";
 
-  std::string scaled_controls_topic;
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic_))
+    scaled_controls_topic_ = "scaled_controls";
 
-  std::string obstacles_topic;
-  if (!nh_.getParam("obstacles_topic", obstacles_topic))
-    obstacles_topic = "obstacles";
+  if (!nh_.getParam("obstacles_topic", obstacles_topic_))
+    obstacles_topic_ = "obstacles";
 
-  std::string potential_topic;
-  if (!nh_.getParam("potential_topic", potential_topic))
-    potential_topic = "potential";
+  if (!nh_.getParam("potential_topic", potential_topic_))
+    potential_topic_ = "potential";
 
   if (!nh_local_.getParam("use_txt", use_txt_))
     use_txt_ = true;
@@ -117,12 +105,6 @@ void DataRecorder::initialize() {
   if (!nh_local_.getParam("record_potential", record_potential_))
     record_potential_ = true;
 
-  pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &DataRecorder::poseCallback, this);
-  ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic, 10, &DataRecorder::refPoseCallback, this);
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic, 10, &DataRecorder::controlsCallback, this);
-  scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &DataRecorder::scaledControlsCallback, this);
-  obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic, 10, &DataRecorder::obstaclesCallback, this);
-  potential_sub_ = nh_.subscribe<std_msgs::Float64>(potential_topic, 10, &DataRecorder::potentialCallback, this);
   trigger_srv_ = nh_.advertiseService("data_recorder_trigger_srv", &DataRecorder::trigger, this);
   params_srv_ = nh_.advertiseService("data_recorder_params_srv", &DataRecorder::updateParams, this);
 
@@ -131,6 +113,33 @@ void DataRecorder::initialize() {
   boost::filesystem::create_directories(folder);
 
   potential_ = 0.0;
+}
+
+void DataRecorder::start() {
+  if (recording_)
+    return;
+
+  start_mark_ = ros::Time::now();
+  recording_ = true;
+}
+
+void DataRecorder::stop() {
+  if (!recording_)
+    return;
+
+  recording_ = false;
+
+  if (use_yaml_)
+    emitYamlFile();
+  if (use_txt_)
+    emitTxtFile();
+
+  t_.clear();
+  pose_list_.clear();
+  ref_pose_list_.clear();
+  controls_list_.clear();
+  scaled_controls_list_.clear();
+  potential_list_.clear();
 }
 
 void DataRecorder::addLatestData() {
@@ -230,7 +239,7 @@ void DataRecorder::emitTxtFile() {
         obstacles_file << obstacles_list_[i][j].x << "\t" << obstacles_list_[i][j].y << "\t" << obstacles_list_[i][j].r << "\t";
       }
       // Fill row to 40 (padding)
-      for (int j = obstacles_list_[i].size(); j < 50; ++j) {
+      for (int j = obstacles_list_[i].size(); j < 40; ++j) {
         obstacles_file << "0.0 \t 0.0 \t 0.0 \t";
       }
       obstacles_file << "\n";
@@ -262,16 +271,11 @@ void DataRecorder::obstaclesCallback(const obstacle_detector::Obstacles::ConstPt
 
     Obstacle o;
     for (int i = 0; i < obstacles_msg->radii.size(); ++i) {
-      double x = obstacles_msg->centre_points[i].x;
-      double y = obstacles_msg->centre_points[i].y;
+      o.x = obstacles_msg->centre_points[i].x;
+      o.y = obstacles_msg->centre_points[i].y;
+      o.r = obstacles_msg->radii[i];
 
-      if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX) {
-        o.x = x;
-        o.y = y;
-        o.r = obstacles_msg->radii[i];
-
-        o_list.push_back(o);
-      }
+      o_list.push_back(o);
     }
 
     obstacles_list_.push_back(o_list);
@@ -283,32 +287,48 @@ void DataRecorder::potentialCallback(const std_msgs::Float64::ConstPtr& potentia
 }
 
 bool DataRecorder::trigger(mtracker::Trigger::Request& req, mtracker::Trigger::Response& res) {
-  if (req.activate && !recording_data_) {
-    t_.clear();
-    pose_list_.clear();
-    ref_pose_list_.clear();
-    controls_list_.clear();
-    scaled_controls_list_.clear();
-    obstacles_list_.clear();
-    potential_list_.clear();
-
-    recording_data_ = true;
-    start_mark_ = ros::Time::now();
+  if (req.activate) {
+    pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic_, 5, &DataRecorder::poseCallback, this);
+    ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic_, 5, &DataRecorder::refPoseCallback, this);
+    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(controls_topic_, 5, &DataRecorder::controlsCallback, this);
+    scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic_, 5, &DataRecorder::scaledControlsCallback, this);
+    obstacles_sub_ = nh_.subscribe<obstacle_detector::Obstacles>(obstacles_topic_, 5, &DataRecorder::obstaclesCallback, this);
+    potential_sub_ = nh_.subscribe<std_msgs::Float64>(potential_topic_, 5, &DataRecorder::potentialCallback, this);
   }
-  else if (!req.activate && recording_data_) {
-    recording_data_ = false;
+  else {
+    stop();
 
-    if (use_txt_)
-      emitTxtFile();
-    if (use_yaml_)
-      emitYamlFile();
+    pose_sub_.shutdown();
+    ref_pose_sub_.shutdown();
+    controls_sub_.shutdown();
+    scaled_controls_sub_.shutdown();
+    obstacles_sub_.shutdown();
+    potential_sub_.shutdown();
   }
 
   return true;
 }
 
 bool DataRecorder::updateParams(mtracker::Params::Request& req, mtracker::Params::Response& res) {
-  return true;
+  // The parameters come as follows:
+  // [recording, rec_pose, rec_ref_pose, rec_ctrls, rec_scal_ctrls, rec_obstac, rec_poten]
+  if (req.params.size() >= 7) {
+    record_pose_ = static_cast<bool>(req.params[1]);
+    record_reference_pose_ = static_cast<bool>(req.params[2]);
+    record_controls_ = static_cast<bool>(req.params[3]);
+    record_scaled_controls_ = static_cast<bool>(req.params[4]);
+    record_obstacles_ = static_cast<bool>(req.params[5]);
+    record_potential_ = static_cast<bool>(req.params[6]);
+
+    if (static_cast<bool>(req.params[0]))
+      start();
+    else
+      stop();
+
+    return true;
+  }
+  else
+    return false;
 }
 
 int main(int argc, char** argv) {

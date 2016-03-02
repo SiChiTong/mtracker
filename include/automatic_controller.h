@@ -52,6 +52,7 @@ public:
 private:
   void initialize();
   void computeControls();
+  void publishAll();
 
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);
@@ -70,6 +71,12 @@ private:
   ros::Publisher controls_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string controls_topic_;
+  std::string pose_topic_;
+  std::string velocity_topic_;
+  std::string reference_pose_topic_;
+  std::string reference_velocity_topic_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;

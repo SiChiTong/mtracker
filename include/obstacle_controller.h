@@ -37,11 +37,6 @@
 
 #define ARMA_DONT_USE_CXX11
 
-#define X_MIN -2.0
-#define X_MAX 2.3
-#define Y_MIN -1.2
-#define Y_MAX 1.2
-
 #include <armadillo>
 #include <vector>
 
@@ -71,11 +66,11 @@ private:
   void computeControls();
 
   double getBetaWorld();          // World beta function
-  double getBeta_i(Obstacle o);   // Obstacles beta functions
+  double getBeta_i(const Obstacle& o);   // Obstacles beta functions
   double getBeta();               // Total beta function (product of all betas)
 
   arma::vec getGradBetaWorld();         // Gradient of world beta function
-  arma::vec getGradBeta_i(Obstacle o);  // Gradient of obstacles beta functions
+  arma::vec getGradBeta_i(const Obstacle& o);  // Gradient of obstacles beta functions
   arma::vec getGradBeta();              // Gradient of total beta function
 
   double getV();            // Navigation function
@@ -95,6 +90,11 @@ private:
   ros::Publisher potential_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string pose_topic_;
+  std::string controls_topic_;
+  std::string obstacles_topic_;
+  std::string potential_topic_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;

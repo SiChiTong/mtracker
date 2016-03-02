@@ -66,8 +66,10 @@ private:
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
-  double max_wheel_rate_;
+  std::string controls_topic_;
+  std::string scaled_controls_topic_;
 
+  double max_wheel_rate_;
   bool controls_scaling_active_;
 };
 

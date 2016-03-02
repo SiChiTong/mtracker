@@ -35,11 +35,6 @@
 
 #pragma once
 
-#define X_MIN -2.0
-#define X_MAX 2.3
-#define Y_MIN -1.2
-#define Y_MAX 1.2
-
 #include <boost/filesystem.hpp>
 //#include <yaml-cpp/yaml.h>
 #include <vector>
@@ -70,6 +65,8 @@ public:
 
 private:
   void initialize();
+  void start();
+  void stop();
   void addLatestData();
   void emitYamlFile();
   void emitTxtFile();
@@ -95,6 +92,13 @@ private:
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
+  std::string pose_topic_;
+  std::string reference_pose_topic_;
+  std::string controls_topic_;
+  std::string scaled_controls_topic_;
+  std::string obstacles_topic_;
+  std::string potential_topic_;
+
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Pose2D ref_pose_;
   geometry_msgs::Twist controls_;
@@ -112,6 +116,7 @@ private:
   std::vector<geometry_msgs::Twist> scaled_controls_list_;
   std::vector< std::vector<Obstacle> > obstacles_list_;
 
+  bool recording_;
   bool use_yaml_;
   bool use_txt_;
   bool record_pose_;
@@ -122,7 +127,6 @@ private:
   bool record_potential_;
 
   int loop_rate_;
-  bool recording_data_;
 };
 
 } // namespace mtracker

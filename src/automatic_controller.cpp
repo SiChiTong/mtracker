@@ -49,7 +49,7 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~"), automatic_
 
     if (automatic_controller_active_) {
       computeControls();
-      controls_pub_.publish(controls_);
+      publishAll();
     }
 
     rate.sleep();
@@ -60,31 +60,21 @@ void AutomaticController::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string pose_topic;
-  if (!nh_.getParam("pose_topic", pose_topic))
-    pose_topic = "pose";
+  if (!nh_.getParam("pose_topic", pose_topic_))
+    pose_topic_ = "pose";
 
-  std::string velocity_topic;
-  if (!nh_.getParam("velocity_topic", velocity_topic))
-    velocity_topic = "velocity";
+  if (!nh_.getParam("velocity_topic", velocity_topic_))
+    velocity_topic_ = "velocity";
 
-  std::string reference_pose_topic;
-  if (!nh_.getParam("reference_pose_topic", reference_pose_topic))
-    reference_pose_topic = "reference_pose";
+  if (!nh_.getParam("reference_pose_topic", reference_pose_topic_))
+    reference_pose_topic_ = "reference_pose";
 
-  std::string reference_velocity_topic;
-  if (!nh_.getParam("reference_velocity_topic", reference_velocity_topic))
-    reference_velocity_topic = "reference_velocity";
+  if (!nh_.getParam("reference_velocity_topic", reference_velocity_topic_))
+    reference_velocity_topic_ = "reference_velocity";
 
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  if (!nh_.getParam("controls_topic", controls_topic_))
+    controls_topic_ = "controls";
 
-  pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic, 10, &AutomaticController::poseCallback, this);
-  velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(velocity_topic, 10, &AutomaticController::velocityCallback, this);
-  ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic, 10, &AutomaticController::refPoseCallback, this);
-  ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(reference_velocity_topic, 10, &AutomaticController::refVelocityCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
   trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &AutomaticController::trigger, this);
   params_srv_ = nh_.advertiseService("automatic_controller_params_srv", &AutomaticController::updateParams, this);
 }
@@ -109,6 +99,10 @@ void AutomaticController::computeControls() {
   controls_.angular.z = w;
 }
 
+void AutomaticController::publishAll() {
+  controls_pub_.publish(controls_);
+}
+
 void AutomaticController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
   pose_ = *pose_msg;
 }
@@ -128,10 +122,23 @@ void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstP
 bool AutomaticController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   automatic_controller_active_ = req.activate;
 
-  if (!automatic_controller_active_) {
+  if (req.activate) {
+    pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic_, 5, &AutomaticController::poseCallback, this);
+    velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(velocity_topic_, 5, &AutomaticController::velocityCallback, this);
+    ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic_, 5, &AutomaticController::refPoseCallback, this);
+    ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(reference_velocity_topic_, 5, &AutomaticController::refVelocityCallback, this);
+    controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic_, 5);
+  }
+  else {
     controls_.linear.x = 0.0;
     controls_.angular.z = 0.0;
     controls_pub_.publish(controls_);
+
+    pose_sub_.shutdown();
+    velocity_sub_.shutdown();
+    ref_pose_sub_.shutdown();
+    ref_velocity_sub_.shutdown();
+    controls_pub_.shutdown();
   }
 
   return true;

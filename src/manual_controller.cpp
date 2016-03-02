@@ -37,7 +37,7 @@
 
 using namespace mtracker;
 
-ManualController::ManualController() : nh_(""), nh_local_("~"), manual_control_active_(false) {
+ManualController::ManualController() : nh_(""), nh_local_("~") {
   initialize();
 
   ROS_INFO("MTracker manual controller [OK]");
@@ -46,33 +46,33 @@ ManualController::ManualController() : nh_(""), nh_local_("~"), manual_control_a
 }
 
 void ManualController::initialize() {
-  std::string controls_topic;
-  if (!nh_.getParam("controls_topic", controls_topic))
-    controls_topic = "controls";
+  if (!nh_.getParam("controls_topic", controls_topic_))
+    controls_topic_ = "controls";
 
-  std::string joy_topic;
-  if (!nh_.getParam("joy_topic", joy_topic))
-    joy_topic = "joy";
+  if (!nh_.getParam("joy_topic", joy_topic_))
+    joy_topic_ = "joy";
 
-  std::string keys_topic;
-  if (!nh_.getParam("keys_topic", keys_topic))
-    keys_topic = "keys";
+  if (!nh_.getParam("keys_topic", keys_topic_))
+    keys_topic_ = "keys";
+
+  if (!nh_local_.getParam("use_joy", use_joy_))
+    use_joy_ = true;
+
+  if (!nh_local_.getParam("use_keys", use_keys_))
+    use_keys_ = true;
 
   if (!nh_local_.getParam("k_v", k_v_))
-    k_v_ = 0.4;
+    k_v_ = 0.6;
 
   if (!nh_local_.getParam("k_w", k_w_))
     k_w_ = 1.5;
 
-  joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic, 10, &ManualController::joyCallback, this);
-  keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic, 10, &ManualController::keysCallback, this);
-  controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic, 10);
   trigger_srv_ = nh_.advertiseService("manual_controller_trigger_srv", &ManualController::trigger, this);
   params_srv_ = nh_.advertiseService("manual_controller_params_srv", &ManualController::updateParams, this);
 }
 
 void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
-  if (manual_control_active_) {
+  if (use_joy_) {
     controls_.linear.x = k_v_ * joy_msg->axes[1];
     controls_.angular.z = k_w_ * joy_msg->axes[0];
     controls_pub_.publish(controls_);
@@ -80,7 +80,7 @@ void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
 }
 
 void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
-  if (manual_control_active_) {
+  if (use_keys_) {
     controls_.linear.x = k_v_ * keys_msg->linear.x;
     controls_.angular.z = k_w_ * keys_msg->angular.z;
     controls_pub_.publish(controls_);
@@ -88,25 +88,37 @@ void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_m
 }
 
 bool ManualController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
-  manual_control_active_ = req.activate;
-
-  if (!manual_control_active_) {
+  if (req.activate) {
+    controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic_, 5);
+    joy_sub_ = nh_.subscribe<sensor_msgs::Joy>(joy_topic_, 5, &ManualController::joyCallback, this);
+    keys_sub_ = nh_.subscribe<geometry_msgs::Twist>(keys_topic_, 5, &ManualController::keysCallback, this);
+  }
+  else {
     controls_.linear.x = 0.0;
     controls_.angular.z = 0.0;
     controls_pub_.publish(controls_);
+
+    controls_pub_.shutdown();
+    joy_sub_.shutdown();
+    keys_sub_.shutdown();
   }
 
   return true;
 }
 
 bool ManualController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
-  if (req.params[0] >= 0.0 && req.params[1] >= 0.0) {
-    k_v_ = req.params[0];
-    k_w_ = req.params[1];
-    return true;
+  if (req.params.size() >= 4) {
+    if (req.params[0] >= 0.0 && req.params[1] >= 0.0 && req.params[2] >= 0.0 && req.params[3] >= 0.0) {
+      k_v_ = req.params[0];
+      k_w_ = req.params[1];
+      use_joy_ = static_cast<bool>(req.params[2]);
+      use_keys_ = static_cast<bool>(req.params[3]);
+
+      return true;
+    }
+    else
+      return false;
   }
-  else
-    return false;
 }
 
 int main(int argc, char** argv) {

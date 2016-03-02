@@ -60,7 +60,7 @@ private:
   void stop();
   void pause();
   void update(double dt);
-  void publish();
+  void publishAll();
 
   bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
   bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
@@ -73,6 +73,9 @@ private:
   ros::Publisher pose_stamped_pub_;
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
+
+  std::string reference_pose_topic_;
+  std::string reference_velocity_topic_;
 
   tf::TransformBroadcaster tf_br_;
   tf::StampedTransform tf_;

@@ -53,7 +53,7 @@ MTracker::MTracker() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(
   }
   else {
     ROS_INFO("Could not open COM port.");
-    ros::shutdown();
+    nh_.shutdown();
   }
 
   ros::Rate rate(loop_rate_);
@@ -84,21 +84,15 @@ void MTracker::initialize() {
   if (!nh_.getParam("loop_rate", loop_rate_))
     loop_rate_ = 100;
 
-  std::string scaled_controls_topic;
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic))
-    scaled_controls_topic = "scaled_controls";
+  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic_))
+    scaled_controls_topic_ = "scaled_controls";
 
-  std::string odom_pose_topic;
-  if (!nh_.getParam("odom_pose_topic", odom_pose_topic))
-    odom_pose_topic = "odom_pose";
+  if (!nh_.getParam("odom_pose_topic", odom_pose_topic_))
+    odom_pose_topic_ = "odom_pose";
 
-  std::string odom_velocity_topic;
-  if (!nh_.getParam("odom_velocity_topic", odom_velocity_topic))
-    odom_velocity_topic = "odom_velocity";
+  if (!nh_.getParam("odom_velocity_topic", odom_velocity_topic_))
+    odom_velocity_topic_ = "odom_velocity";
 
-  controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic, 10, &MTracker::controlsCallback, this);
-  pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic, 10);
-  velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic, 10);
   trigger_srv_ = nh_.advertiseService("mtracker_trigger_srv", &MTracker::trigger, this);
   params_srv_ = nh_.advertiseService("mtracker_params_srv", &MTracker::updateParams, this);
 }
@@ -127,10 +121,19 @@ void MTracker::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_m
 bool MTracker::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
   mtracker_active_ = req.activate;
 
-  if (!mtracker_active_) {
+  if (req.activate) {
+    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic_, 5, &MTracker::controlsCallback, this);
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(odom_pose_topic_, 5);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(odom_velocity_topic_, 5);
+  }
+  else {
     com_->setVelocities(0.0, 0.0);
     com_->writeFrame();
     com_->readFrame();
+
+    controls_sub_.shutdown();
+    pose_pub_.shutdown();
+    velocity_pub_.shutdown();
   }
 
   return true;
